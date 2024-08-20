@@ -20,3 +20,7 @@ upgrader_canister_client = { workspace = true }
 [build-dependencies]
 anyhow = { workspace = true }
 vergen-gitcl = { workspace = true }
+
+[features]
+default = []
+export-api = []
