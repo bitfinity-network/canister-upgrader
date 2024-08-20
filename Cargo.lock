@@ -1404,6 +1404,8 @@ dependencies = [
  "ic-log",
  "ic-stable-structures 0.20.1",
  "ic-storage",
+ "upgrader_canister_client",
+ "upgrader_canister_did",
  "vergen-gitcl",
 ]
 
@@ -1411,15 +1413,15 @@ dependencies = [
 name = "upgrader_canister_client"
 version = "0.1.0"
 dependencies = [
- "anyhow",
- "ic-canister",
- "ic-canister-client",
- "ic-exports",
- "ic-helpers",
- "ic-log",
- "ic-stable-structures 0.20.1",
- "ic-storage",
- "vergen-gitcl",
+ "upgrader_canister_did",
+]
+
+[[package]]
+name = "upgrader_canister_did"
+version = "0.1.0"
+dependencies = [
+ "candid",
+ "serde",
 ]
 
 [[package]]

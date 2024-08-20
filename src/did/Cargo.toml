@@ -1,0 +1,8 @@
+[package]
+name = "upgrader_canister_did"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+candid = { workspace = true }
+serde = { workspace = true }
