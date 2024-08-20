@@ -1,4 +1,3 @@
-
 use candid::Principal;
 
 use ic_stable_structures::stable_structures::Memory;
@@ -553,9 +552,6 @@ mod tests {
             .add_permissions(principal_1, vec![Permission::ReadLogs])
             .unwrap_err();
 
-        assert_eq!(
-            UpgraderError::AnonymousPrincipalNotAllowed,
-            res
-        );
+        assert_eq!(UpgraderError::AnonymousPrincipalNotAllowed, res);
     }
 }

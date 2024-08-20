@@ -6,7 +6,6 @@ pub type Result<T> = std::result::Result<T, UpgraderError>;
 
 #[derive(Debug, Error, Deserialize, CandidType, Eq, PartialEq, Serialize, Clone)]
 pub enum UpgraderError {
-
     #[error("the user has no permission to call this method")]
     NotAuthorized,
 
@@ -15,5 +14,4 @@ pub enum UpgraderError {
 
     #[error("The request is not valid: {0}")]
     BadRequest(String),
-
 }
