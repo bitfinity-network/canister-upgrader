@@ -25,7 +25,11 @@ pub async fn deploy_canister(env: Option<PocketIc>) -> (PocketIc, Principal) {
 }
 
 /// Builds an upgrader canister client
-pub fn build_client(pocket: PocketIc, canister_principal: Principal, caller_principal: Principal) -> UpgraderCanisterClient<PocketIcClient> {
+pub fn build_client(
+    pocket: PocketIc,
+    canister_principal: Principal,
+    caller_principal: Principal,
+) -> UpgraderCanisterClient<PocketIcClient> {
     let client = PocketIcClient::from_client(pocket, canister_principal, caller_principal);
     UpgraderCanisterClient::new(client)
 }
