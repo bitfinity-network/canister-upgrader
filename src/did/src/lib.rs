@@ -15,3 +15,6 @@ pub struct BuildData {
     pub git_sha: String,
     pub git_commit_timestamp: String,
 }
+
+#[derive(Debug, Clone, CandidType, Deserialize)]
+pub struct UpgraderCanisterInitData {}
