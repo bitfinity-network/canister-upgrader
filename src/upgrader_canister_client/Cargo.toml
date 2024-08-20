@@ -1,0 +1,17 @@
+[package]
+name = "upgrader_canister_client"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+ic-canister = { workspace = true }
+ic-exports = { workspace = true }
+ic-helpers = { workspace = true }
+ic-log = { workspace = true }
+ic-canister-client = { workspace = true }
+ic-storage = { workspace = true }
+ic-stable-structures = { workspace = true }
+
+[build-dependencies]
+anyhow = { workspace = true }
+vergen-gitcl = { workspace = true }
