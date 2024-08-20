@@ -6,7 +6,7 @@ pub mod state;
 
 pub fn idl() -> String {
     use ic_canister::Idl;
-    use upgrader_canister_did::UpgraderCanisterInitData;
+    use upgrader_canister_did::*;
 
     let canister_idl = generate_idl!();
 

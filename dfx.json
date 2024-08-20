@@ -1,45 +1,9 @@
 {
   "canisters": {
-    "canister-a": {
+    "upgrader_canister": {
       "build": "",
-      "candid": "target/wasm32-unknown-unknown/release/canister_a.did",
-      "wasm": "target/wasm32-unknown-unknown/release/canister_a.wasm",
-      "type": "custom"
-    },
-    "canister-b": {
-      "build": "",
-      "candid": "target/wasm32-unknown-unknown/release/canister_b.did",
-      "wasm": "target/wasm32-unknown-unknown/release/canister_b.wasm",
-      "type": "custom"
-    },
-    "canister-c": {
-      "build": "",
-      "candid": "target/wasm32-unknown-unknown/release/canister-c.did",
-      "wasm": "target/wasm32-unknown-unknown/release/canister-c.wasm",
-      "type": "custom"
-    },
-    "canister-d": {
-      "build": "",
-      "candid": "target/wasm32-unknown-unknown/release/canister-d.did",
-      "wasm": "target/wasm32-unknown-unknown/release/canister-d.wasm",
-      "type": "custom"
-    },
-    "dummy_canister": {
-      "build": "",
-      "candid": "target/wasm32-unknown-unknown/release/dummy_canister.did",
-      "wasm": "target/wasm32-unknown-unknown/release/dummy_canister.wasm",
-      "type": "custom"
-    },
-    "log_canister": {
-      "build": "",
-      "candid": "target/wasm32-unknown-unknown/release/log_canister.did",
-      "wasm": "target/wasm32-unknown-unknown/release/log_canister.wasm",
-      "type": "custom"
-    },
-    "dummy_scheduler_canister": {
-      "build": "",
-      "candid": "target/wasm32-unknown-unknown/release/dummy_scheduler_canister.did",
-      "wasm": "target/wasm32-unknown-unknown/release/dummy_scheduler_canister.wasm",
+      "candid": "target/wasm32-unknown-unknown/release/upgrader_canister.did",
+      "wasm": "target/wasm32-unknown-unknown/release/upgrader_canister.wasm",
       "type": "custom"
     }
   },
