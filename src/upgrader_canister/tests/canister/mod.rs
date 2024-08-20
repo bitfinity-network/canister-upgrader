@@ -5,7 +5,6 @@ use upgrader_canister_client::UpgraderCanisterClient;
 
 use crate::pocket_ic::deploy_canister;
 
-
 #[tokio::test]
 async fn test_should_query_build_data() {
     let env = ic_exports::pocket_ic::init_pocket_ic().await;
@@ -16,5 +15,5 @@ async fn test_should_query_build_data() {
 
     let result = client.get_canister_build_data().await.unwrap();
 
-    assert_eq!("upgrader_canister", result.pkg_name); 
+    assert_eq!("upgrader_canister", result.pkg_name);
 }

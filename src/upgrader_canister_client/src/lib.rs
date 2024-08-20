@@ -1,7 +1,6 @@
 use ic_canister_client::{CanisterClient, CanisterClientResult};
 use upgrader_canister_did::BuildData;
 
-
 /// An upgrader canister client.
 #[derive(Debug, Clone)]
 pub struct UpgraderCanisterClient<C>
@@ -22,12 +21,7 @@ impl<C: CanisterClient> UpgraderCanisterClient<C> {
     }
 
     /// Returns the build data of the canister
-    pub async fn get_canister_build_data(
-        &self,
-    ) -> CanisterClientResult<BuildData> {
-        self.client
-            .query("get_canister_build_data", ())
-            .await
+    pub async fn get_canister_build_data(&self) -> CanisterClientResult<BuildData> {
+        self.client.query("get_canister_build_data", ()).await
     }
-
 }

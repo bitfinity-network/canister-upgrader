@@ -9,7 +9,7 @@ pub mod wasm_utils;
 pub async fn deploy_canister(env: &PocketIc) -> Principal {
     let wasm = get_upgrader_canister_bytecode();
     let init_data = UpgraderCanisterInitData {};
-    let args = Encode!(&(init_data, )).unwrap();
+    let args = Encode!(&(init_data,)).unwrap();
     let canister = env.create_canister().await;
     env.add_cycles(canister, 10_u128.pow(12)).await;
     env.install_canister(canister, wasm.to_vec(), args, None)
