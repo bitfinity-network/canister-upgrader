@@ -2,6 +2,7 @@ use ic_canister::generate_idl;
 
 pub mod build_data;
 pub mod canister;
+pub mod constant;
 pub mod state;
 
 pub fn idl() -> String {

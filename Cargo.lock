@@ -2278,6 +2278,7 @@ dependencies = [
  "ic-log",
  "ic-stable-structures 0.20.1",
  "ic-storage",
+ "log",
  "rand",
  "tokio",
  "upgrader_canister_client",
@@ -2298,7 +2299,9 @@ name = "upgrader_canister_did"
 version = "0.1.0"
 dependencies = [
  "candid",
+ "ic-stable-structures 0.20.1",
  "serde",
+ "thiserror",
 ]
 
 [[package]]
