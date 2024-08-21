@@ -14,4 +14,7 @@ pub enum UpgraderError {
 
     #[error("The request is not valid: {0}")]
     BadRequest(String),
+
+    #[error("The key provided already exists: {0}")]
+    NotUniqueKey(String),
 }

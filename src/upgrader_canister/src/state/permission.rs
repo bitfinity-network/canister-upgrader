@@ -14,6 +14,7 @@ pub struct Permissions<M: Memory> {
 }
 
 impl<M: Memory> Permissions<M> {
+    
     pub fn new(memory_manager: &dyn MemoryManager<M, u8>) -> Self {
         Self {
             permission_data: StableBTreeMap::new(memory_manager.get(PERMISSIONS_MAP_MEMORY_ID)),
@@ -154,20 +155,20 @@ mod tests {
 
         // Assert
         assert!(permissions.has_all_permissions(&principal, &[]));
-        assert!(!permissions.has_all_permissions(&principal, &[Permission::ReadLogs]));
+        assert!(!permissions.has_all_permissions(&principal, &[Permission::CreatePoll]));
         assert!(permissions.has_any_permission(&principal, &[]));
-        assert!(!permissions.has_any_permission(&principal, &[Permission::UpdateLogsConfiguration]));
+        assert!(!permissions.has_any_permission(&principal, &[Permission::VotePoll]));
 
         permissions
-            .add_permissions(principal, vec![Permission::ReadLogs])
+            .add_permissions(principal, vec![Permission::CreatePoll])
             .unwrap();
 
         assert!(permissions.has_all_permissions(&principal, &[]));
         assert!(
-            !permissions.has_all_permissions(&principal, &[Permission::UpdateLogsConfiguration])
+            !permissions.has_all_permissions(&principal, &[Permission::VotePoll])
         );
         assert!(permissions.has_any_permission(&principal, &[]));
-        assert!(!permissions.has_any_permission(&principal, &[Permission::UpdateLogsConfiguration]));
+        assert!(!permissions.has_any_permission(&principal, &[Permission::VotePoll]));
     }
 
     #[test]
@@ -187,30 +188,30 @@ mod tests {
 
         assert_eq!(
             PermissionList {
-                permissions: HashSet::from_iter(vec![Permission::ReadLogs])
+                permissions: HashSet::from_iter(vec![Permission::CreatePoll])
             },
             permissions
-                .add_permissions(principal, vec![Permission::ReadLogs])
+                .add_permissions(principal, vec![Permission::CreatePoll])
                 .unwrap()
         );
         assert_eq!(
             PermissionList {
-                permissions: HashSet::from_iter(vec![Permission::ReadLogs])
+                permissions: HashSet::from_iter(vec![Permission::CreatePoll])
             },
             permissions.get_permissions(&principal)
         );
 
         assert_eq!(
             PermissionList {
-                permissions: HashSet::from_iter(vec![Permission::ReadLogs])
+                permissions: HashSet::from_iter(vec![Permission::CreatePoll])
             },
             permissions
-                .add_permissions(principal, vec![Permission::ReadLogs, Permission::ReadLogs])
+                .add_permissions(principal, vec![Permission::CreatePoll, Permission::CreatePoll])
                 .unwrap()
         );
         assert_eq!(
             PermissionList {
-                permissions: HashSet::from_iter(vec![Permission::ReadLogs])
+                permissions: HashSet::from_iter(vec![Permission::CreatePoll])
             },
             permissions.get_permissions(&principal)
         );
@@ -218,19 +219,19 @@ mod tests {
         assert_eq!(
             PermissionList {
                 permissions: HashSet::from_iter(vec![
-                    Permission::ReadLogs,
-                    Permission::UpdateLogsConfiguration
+                    Permission::CreatePoll,
+                    Permission::VotePoll
                 ])
             },
             permissions
-                .add_permissions(principal, vec![Permission::UpdateLogsConfiguration])
+                .add_permissions(principal, vec![Permission::VotePoll])
                 .unwrap()
         );
         assert_eq!(
             PermissionList {
                 permissions: HashSet::from_iter(vec![
-                    Permission::ReadLogs,
-                    Permission::UpdateLogsConfiguration
+                    Permission::CreatePoll,
+                    Permission::VotePoll
                 ])
             },
             permissions.get_permissions(&principal)
@@ -241,8 +242,8 @@ mod tests {
             permissions.remove_permissions(
                 principal,
                 &[
-                    Permission::UpdateLogsConfiguration,
-                    Permission::ReadLogs,
+                    Permission::VotePoll,
+                    Permission::CreatePoll,
                     Permission::Admin
                 ]
             )
@@ -256,7 +257,7 @@ mod tests {
             PermissionList::default(),
             permissions.remove_permissions(
                 principal,
-                &[Permission::UpdateLogsConfiguration, Permission::ReadLogs]
+                &[Permission::VotePoll, Permission::CreatePoll]
             )
         );
         assert_eq!(
@@ -280,186 +281,186 @@ mod tests {
         // Add permissions
         {
             permissions
-                .add_permissions(principal_2, vec![Permission::ReadLogs])
+                .add_permissions(principal_2, vec![Permission::CreatePoll])
                 .unwrap();
             permissions
-                .add_permissions(principal_3, vec![Permission::UpdateLogsConfiguration])
+                .add_permissions(principal_3, vec![Permission::VotePoll])
                 .unwrap();
             permissions
                 .add_permissions(
                     principal_4,
-                    vec![Permission::ReadLogs, Permission::UpdateLogsConfiguration],
+                    vec![Permission::CreatePoll, Permission::VotePoll],
                 )
                 .unwrap();
             permissions
-                .add_permissions(principal_5, vec![Permission::ReadLogs])
+                .add_permissions(principal_5, vec![Permission::CreatePoll])
                 .unwrap();
             permissions
-                .add_permissions(principal_5, vec![Permission::UpdateLogsConfiguration])
+                .add_permissions(principal_5, vec![Permission::VotePoll])
                 .unwrap();
 
             // Assert
-            assert!(!permissions.has_all_permissions(&principal_1, &[Permission::ReadLogs]));
+            assert!(!permissions.has_all_permissions(&principal_1, &[Permission::CreatePoll]));
             assert!(!permissions
-                .has_all_permissions(&principal_1, &[Permission::UpdateLogsConfiguration]));
+                .has_all_permissions(&principal_1, &[Permission::VotePoll]));
             assert!(!permissions.has_all_permissions(
                 &principal_1,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[Permission::CreatePoll, Permission::VotePoll]
             ));
-            assert!(!permissions.has_any_permission(&principal_1, &[Permission::ReadLogs]));
+            assert!(!permissions.has_any_permission(&principal_1, &[Permission::CreatePoll]));
             assert!(!permissions
-                .has_any_permission(&principal_1, &[Permission::UpdateLogsConfiguration]));
+                .has_any_permission(&principal_1, &[Permission::VotePoll]));
             assert!(!permissions.has_any_permission(
                 &principal_1,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[Permission::CreatePoll, Permission::VotePoll]
             ));
 
-            assert!(permissions.has_all_permissions(&principal_2, &[Permission::ReadLogs]));
+            assert!(permissions.has_all_permissions(&principal_2, &[Permission::CreatePoll]));
             assert!(!permissions
-                .has_all_permissions(&principal_2, &[Permission::UpdateLogsConfiguration]));
+                .has_all_permissions(&principal_2, &[Permission::VotePoll]));
             assert!(!permissions.has_all_permissions(
                 &principal_2,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[Permission::CreatePoll, Permission::VotePoll]
             ));
-            assert!(permissions.has_any_permission(&principal_2, &[Permission::ReadLogs]));
+            assert!(permissions.has_any_permission(&principal_2, &[Permission::CreatePoll]));
             assert!(!permissions
-                .has_any_permission(&principal_2, &[Permission::UpdateLogsConfiguration]));
+                .has_any_permission(&principal_2, &[Permission::VotePoll]));
             assert!(permissions.has_any_permission(
                 &principal_2,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[Permission::CreatePoll, Permission::VotePoll]
             ));
 
-            assert!(!permissions.has_all_permissions(&principal_3, &[Permission::ReadLogs]));
+            assert!(!permissions.has_all_permissions(&principal_3, &[Permission::CreatePoll]));
             assert!(permissions
-                .has_all_permissions(&principal_3, &[Permission::UpdateLogsConfiguration]));
+                .has_all_permissions(&principal_3, &[Permission::VotePoll]));
             assert!(!permissions.has_all_permissions(
                 &principal_3,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[Permission::CreatePoll, Permission::VotePoll]
             ));
-            assert!(!permissions.has_any_permission(&principal_3, &[Permission::ReadLogs]));
+            assert!(!permissions.has_any_permission(&principal_3, &[Permission::CreatePoll]));
             assert!(permissions
-                .has_any_permission(&principal_3, &[Permission::UpdateLogsConfiguration]));
+                .has_any_permission(&principal_3, &[Permission::VotePoll]));
             assert!(permissions.has_any_permission(
                 &principal_3,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[Permission::CreatePoll, Permission::VotePoll]
             ));
 
-            assert!(permissions.has_all_permissions(&principal_4, &[Permission::ReadLogs]));
+            assert!(permissions.has_all_permissions(&principal_4, &[Permission::CreatePoll]));
             assert!(permissions
-                .has_all_permissions(&principal_4, &[Permission::UpdateLogsConfiguration]));
+                .has_all_permissions(&principal_4, &[Permission::VotePoll]));
             assert!(permissions.has_all_permissions(
                 &principal_4,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[Permission::CreatePoll, Permission::VotePoll]
             ));
-            assert!(permissions.has_any_permission(&principal_4, &[Permission::ReadLogs]));
+            assert!(permissions.has_any_permission(&principal_4, &[Permission::CreatePoll]));
             assert!(permissions
-                .has_any_permission(&principal_4, &[Permission::UpdateLogsConfiguration]));
+                .has_any_permission(&principal_4, &[Permission::VotePoll]));
             assert!(permissions.has_any_permission(
                 &principal_4,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[Permission::CreatePoll, Permission::VotePoll]
             ));
 
-            assert!(permissions.has_all_permissions(&principal_5, &[Permission::ReadLogs]));
+            assert!(permissions.has_all_permissions(&principal_5, &[Permission::CreatePoll]));
             assert!(permissions
-                .has_all_permissions(&principal_5, &[Permission::UpdateLogsConfiguration]));
+                .has_all_permissions(&principal_5, &[Permission::VotePoll]));
             assert!(permissions.has_all_permissions(
                 &principal_5,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[Permission::CreatePoll, Permission::VotePoll]
             ));
-            assert!(permissions.has_any_permission(&principal_5, &[Permission::ReadLogs]));
+            assert!(permissions.has_any_permission(&principal_5, &[Permission::CreatePoll]));
             assert!(permissions
-                .has_any_permission(&principal_5, &[Permission::UpdateLogsConfiguration]));
+                .has_any_permission(&principal_5, &[Permission::VotePoll]));
             assert!(permissions.has_any_permission(
                 &principal_5,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[Permission::CreatePoll, Permission::VotePoll]
             ));
         }
 
         // remove permissions
         {
-            permissions.remove_permissions(principal_1, &[Permission::ReadLogs]);
-            permissions.remove_permissions(principal_2, &[Permission::ReadLogs]);
-            permissions.remove_permissions(principal_3, &[Permission::ReadLogs]);
-            permissions.remove_permissions(principal_4, &[Permission::ReadLogs]);
+            permissions.remove_permissions(principal_1, &[Permission::CreatePoll]);
+            permissions.remove_permissions(principal_2, &[Permission::CreatePoll]);
+            permissions.remove_permissions(principal_3, &[Permission::CreatePoll]);
+            permissions.remove_permissions(principal_4, &[Permission::CreatePoll]);
             permissions.remove_permissions(
                 principal_5,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration],
+                &[Permission::CreatePoll, Permission::VotePoll],
             );
 
             // Assert
-            assert!(!permissions.has_all_permissions(&principal_1, &[Permission::ReadLogs]));
+            assert!(!permissions.has_all_permissions(&principal_1, &[Permission::CreatePoll]));
             assert!(!permissions
-                .has_all_permissions(&principal_1, &[Permission::UpdateLogsConfiguration]));
+                .has_all_permissions(&principal_1, &[Permission::VotePoll]));
             assert!(!permissions.has_all_permissions(
                 &principal_1,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[Permission::CreatePoll, Permission::VotePoll]
             ));
-            assert!(!permissions.has_any_permission(&principal_1, &[Permission::ReadLogs]));
+            assert!(!permissions.has_any_permission(&principal_1, &[Permission::CreatePoll]));
             assert!(!permissions
-                .has_any_permission(&principal_1, &[Permission::UpdateLogsConfiguration]));
+                .has_any_permission(&principal_1, &[Permission::VotePoll]));
             assert!(!permissions.has_any_permission(
                 &principal_1,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[Permission::CreatePoll, Permission::VotePoll]
             ));
 
-            assert!(!permissions.has_all_permissions(&principal_2, &[Permission::ReadLogs]));
+            assert!(!permissions.has_all_permissions(&principal_2, &[Permission::CreatePoll]));
             assert!(!permissions
-                .has_all_permissions(&principal_2, &[Permission::UpdateLogsConfiguration]));
+                .has_all_permissions(&principal_2, &[Permission::VotePoll]));
             assert!(!permissions.has_all_permissions(
                 &principal_2,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[Permission::CreatePoll, Permission::VotePoll]
             ));
-            assert!(!permissions.has_any_permission(&principal_2, &[Permission::ReadLogs]));
+            assert!(!permissions.has_any_permission(&principal_2, &[Permission::CreatePoll]));
             assert!(!permissions
-                .has_any_permission(&principal_2, &[Permission::UpdateLogsConfiguration]));
+                .has_any_permission(&principal_2, &[Permission::VotePoll]));
             assert!(!permissions.has_any_permission(
                 &principal_2,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[Permission::CreatePoll, Permission::VotePoll]
             ));
 
-            assert!(!permissions.has_all_permissions(&principal_3, &[Permission::ReadLogs]));
+            assert!(!permissions.has_all_permissions(&principal_3, &[Permission::CreatePoll]));
             assert!(permissions
-                .has_all_permissions(&principal_3, &[Permission::UpdateLogsConfiguration]));
+                .has_all_permissions(&principal_3, &[Permission::VotePoll]));
             assert!(!permissions.has_all_permissions(
                 &principal_3,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[Permission::CreatePoll, Permission::VotePoll]
             ));
-            assert!(!permissions.has_any_permission(&principal_3, &[Permission::ReadLogs]));
+            assert!(!permissions.has_any_permission(&principal_3, &[Permission::CreatePoll]));
             assert!(permissions
-                .has_any_permission(&principal_3, &[Permission::UpdateLogsConfiguration]));
+                .has_any_permission(&principal_3, &[Permission::VotePoll]));
             assert!(permissions.has_any_permission(
                 &principal_3,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[Permission::CreatePoll, Permission::VotePoll]
             ));
 
-            assert!(!permissions.has_all_permissions(&principal_4, &[Permission::ReadLogs]));
+            assert!(!permissions.has_all_permissions(&principal_4, &[Permission::CreatePoll]));
             assert!(permissions
-                .has_all_permissions(&principal_4, &[Permission::UpdateLogsConfiguration]));
+                .has_all_permissions(&principal_4, &[Permission::VotePoll]));
             assert!(!permissions.has_all_permissions(
                 &principal_4,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[Permission::CreatePoll, Permission::VotePoll]
             ));
-            assert!(!permissions.has_any_permission(&principal_4, &[Permission::ReadLogs]));
+            assert!(!permissions.has_any_permission(&principal_4, &[Permission::CreatePoll]));
             assert!(permissions
-                .has_any_permission(&principal_4, &[Permission::UpdateLogsConfiguration]));
+                .has_any_permission(&principal_4, &[Permission::VotePoll]));
             assert!(permissions.has_any_permission(
                 &principal_4,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[Permission::CreatePoll, Permission::VotePoll]
             ));
 
-            assert!(!permissions.has_all_permissions(&principal_5, &[Permission::ReadLogs]));
+            assert!(!permissions.has_all_permissions(&principal_5, &[Permission::CreatePoll]));
             assert!(!permissions
-                .has_all_permissions(&principal_5, &[Permission::UpdateLogsConfiguration]));
+                .has_all_permissions(&principal_5, &[Permission::VotePoll]));
             assert!(!permissions.has_all_permissions(
                 &principal_5,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[Permission::CreatePoll, Permission::VotePoll]
             ));
-            assert!(!permissions.has_any_permission(&principal_5, &[Permission::ReadLogs]));
+            assert!(!permissions.has_any_permission(&principal_5, &[Permission::CreatePoll]));
             assert!(!permissions
-                .has_any_permission(&principal_5, &[Permission::UpdateLogsConfiguration]));
+                .has_any_permission(&principal_5, &[Permission::VotePoll]));
             assert!(!permissions.has_any_permission(
                 &principal_5,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[Permission::CreatePoll, Permission::VotePoll]
             ));
         }
     }
@@ -473,7 +474,7 @@ mod tests {
         let principal_1 = Principal::from_slice(&[1; 29]);
 
         permissions
-            .add_permissions(principal_1, vec![Permission::ReadLogs])
+            .add_permissions(principal_1, vec![Permission::CreatePoll])
             .unwrap();
 
         // Assert
@@ -481,29 +482,29 @@ mod tests {
             Err(UpgraderError::NotAuthorized),
             permissions.check_has_all_permissions(
                 &principal_1,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[Permission::CreatePoll, Permission::VotePoll]
             )
         );
         assert!(permissions
-            .check_has_all_permissions(&principal_1, &[Permission::ReadLogs])
+            .check_has_all_permissions(&principal_1, &[Permission::CreatePoll])
             .is_ok());
         assert!(permissions
-            .check_has_all_permissions(&principal_1, &[Permission::UpdateLogsConfiguration])
+            .check_has_all_permissions(&principal_1, &[Permission::VotePoll])
             .is_err());
 
         assert!(permissions
             .check_has_any_permission(
                 &principal_1,
-                &[Permission::ReadLogs, Permission::UpdateLogsConfiguration]
+                &[Permission::CreatePoll, Permission::VotePoll]
             )
             .is_ok());
         assert!(permissions
-            .check_has_any_permission(&principal_1, &[Permission::ReadLogs])
+            .check_has_any_permission(&principal_1, &[Permission::CreatePoll])
             .is_ok());
         assert_eq!(
             Err(UpgraderError::NotAuthorized),
             permissions
-                .check_has_any_permission(&principal_1, &[Permission::UpdateLogsConfiguration])
+                .check_has_any_permission(&principal_1, &[Permission::VotePoll])
         );
     }
 
@@ -520,7 +521,7 @@ mod tests {
         );
 
         permissions
-            .add_permissions(principal_1, vec![Permission::ReadLogs])
+            .add_permissions(principal_1, vec![Permission::CreatePoll])
             .unwrap();
         assert_eq!(
             Err(UpgraderError::NotAuthorized),
@@ -549,7 +550,7 @@ mod tests {
         let principal_1 = Principal::anonymous();
 
         let res = permissions
-            .add_permissions(principal_1, vec![Permission::ReadLogs])
+            .add_permissions(principal_1, vec![Permission::CreatePoll])
             .unwrap_err();
 
         assert_eq!(UpgraderError::AnonymousPrincipalNotAllowed, res);

@@ -6,6 +6,8 @@ use ic_stable_structures::{
 use permission::Permissions;
 
 pub mod permission;
+pub mod polls;
+pub mod projects;
 
 /// State of the upgrader canister
 pub struct UpgraderCanisterState {
