@@ -11,7 +11,6 @@ pub struct Projects<M: Memory> {
 }
 
 impl<M: Memory> Projects<M> {
-
     pub fn new(memory_manager: &dyn MemoryManager<M, u8>) -> Self {
         Self {
             projects: StableBTreeMap::new(memory_manager.get(PROJECTS_MAP_MEMORY_ID)),
@@ -33,7 +32,6 @@ impl<M: Memory> Projects<M> {
             Ok(())
         }
     }
-    
 }
 
 #[cfg(test)]
@@ -73,7 +71,10 @@ mod test {
 
         // Assert
         assert_eq!(projects.get(&project.key), Some(project.clone()));
-        assert_eq!(projects.insert(project), Err(UpgraderError::NotUniqueKey("key".to_string())));
+        assert_eq!(
+            projects.insert(project),
+            Err(UpgraderError::NotUniqueKey("key".to_string()))
+        );
     }
 
     /// Verifies that multiple projects can be inserted
@@ -100,5 +101,4 @@ mod test {
         assert_eq!(projects.get(&project1.key), Some(project1));
         assert_eq!(projects.get(&project2.key), Some(project2));
     }
-
 }

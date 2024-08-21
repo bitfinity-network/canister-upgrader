@@ -1,6 +1,8 @@
 use candid::Principal;
 use ic_stable_structures::stable_structures::Memory;
-use ic_stable_structures::{BTreeMapStructure, CellStructure, MemoryManager, StableBTreeMap, StableCell};
+use ic_stable_structures::{
+    BTreeMapStructure, CellStructure, MemoryManager, StableBTreeMap, StableCell,
+};
 use upgrader_canister_did::error::{Result, UpgraderError};
 use upgrader_canister_did::Poll;
 
@@ -16,11 +18,8 @@ impl<M: Memory> Polls<M> {
     pub fn new(memory_manager: &dyn MemoryManager<M, u8>) -> Self {
         Self {
             polls: StableBTreeMap::new(memory_manager.get(POLLS_MAP_MEMORY_ID)),
-            polls_id_sequence: StableCell::new(
-                memory_manager.get(POLLS_ID_SEQUENCE_MEMORY_ID),
-                0,
-            )
-            .expect("stable memory POLLS_ID_SEQUENCE_MEMORY_ID initialization failed"),
+            polls_id_sequence: StableCell::new(memory_manager.get(POLLS_ID_SEQUENCE_MEMORY_ID), 0)
+                .expect("stable memory POLLS_ID_SEQUENCE_MEMORY_ID initialization failed"),
         }
     }
 
@@ -38,7 +37,9 @@ impl<M: Memory> Polls<M> {
 
     /// Votes for a poll. If the voter has already voted, the previous vote is replaced.
     pub fn vote(&mut self, poll_id: u64, voter_principal: Principal, approved: bool) -> Result<()> {
-        let mut poll = self.polls.get(&poll_id).ok_or_else(|| UpgraderError::BadRequest(format!("Poll with id {} not found", poll_id)))?;
+        let mut poll = self.polls.get(&poll_id).ok_or_else(|| {
+            UpgraderError::BadRequest(format!("Poll with id {} not found", poll_id))
+        })?;
 
         // Remove the voter from the previous vote
         poll.yes_voters.retain(|x| x != &voter_principal);
@@ -58,7 +59,9 @@ impl<M: Memory> Polls<M> {
     fn next_id(&mut self) -> u64 {
         // Polls could be removed from the map so we need to keep track of the next id
         let id = *self.polls_id_sequence.get();
-        self.polls_id_sequence.set(id + 1).expect("Unable to access the stable storage to set the next poll id");
+        self.polls_id_sequence
+            .set(id + 1)
+            .expect("Unable to access the stable storage to set the next poll id");
         id
     }
 }
@@ -67,7 +70,6 @@ impl<M: Memory> Polls<M> {
 mod test {
     use candid::Principal;
     use upgrader_canister_did::PollType;
-
 
     /// Verifies that the next id is generated correctly
     #[test]
@@ -91,7 +93,10 @@ mod test {
             description: "poll_0".to_string(),
             yes_voters: vec![],
             no_voters: vec![],
-            poll_type: PollType::ProjectHash { project: "project".to_owned(), hash: "hash".to_owned() },
+            poll_type: PollType::ProjectHash {
+                project: "project".to_owned(),
+                hash: "hash".to_owned(),
+            },
             created_timestamp_millis: 123456,
             end_timestamp_millis: 234567,
         });
@@ -100,7 +105,10 @@ mod test {
             description: "poll_1".to_string(),
             yes_voters: vec![],
             no_voters: vec![],
-            poll_type: PollType::ProjectHash { project: "project".to_owned(), hash: "hash".to_owned() },
+            poll_type: PollType::ProjectHash {
+                project: "project".to_owned(),
+                hash: "hash".to_owned(),
+            },
             created_timestamp_millis: 123456,
             end_timestamp_millis: 234567,
         });
@@ -109,7 +117,6 @@ mod test {
         assert_eq!(polls.next_id(), 2);
         assert_eq!(polls.get(&poll_0_id).unwrap().description, "poll_0");
         assert_eq!(polls.get(&poll_1_id).unwrap().description, "poll_1");
-
     }
 
     /// Should return an error if voting for a poll that does not exist
@@ -136,7 +143,10 @@ mod test {
             description: "poll_0".to_string(),
             yes_voters: vec![],
             no_voters: vec![],
-            poll_type: PollType::ProjectHash { project: "project".to_owned(), hash: "hash".to_owned() },
+            poll_type: PollType::ProjectHash {
+                project: "project".to_owned(),
+                hash: "hash".to_owned(),
+            },
             created_timestamp_millis: 123456,
             end_timestamp_millis: 234567,
         });
@@ -144,7 +154,7 @@ mod test {
         let principal_1 = Principal::from_slice(&[1, 29]);
         let principal_2 = Principal::from_slice(&[2, 29]);
         let principal_3 = Principal::from_slice(&[3, 29]);
-        
+
         // Act
         polls.vote(poll_id, principal_1, true).unwrap();
         polls.vote(poll_id, principal_2, false).unwrap();
@@ -170,7 +180,10 @@ mod test {
             description: "poll_0".to_string(),
             yes_voters: vec![],
             no_voters: vec![],
-            poll_type: PollType::ProjectHash { project: "project".to_owned(), hash: "hash".to_owned() },
+            poll_type: PollType::ProjectHash {
+                project: "project".to_owned(),
+                hash: "hash".to_owned(),
+            },
             created_timestamp_millis: 123456,
             end_timestamp_millis: 234567,
         });
@@ -179,7 +192,7 @@ mod test {
         let principal_2 = Principal::from_slice(&[2, 29]);
         let principal_3 = Principal::from_slice(&[3, 29]);
         let principal_4 = Principal::from_slice(&[4, 29]);
-        
+
         // Act
         polls.vote(poll_id, principal_1, true).unwrap();
         polls.vote(poll_id, principal_2, true).unwrap();
@@ -198,5 +211,4 @@ mod test {
         assert!(poll.no_voters.contains(&principal_1));
         assert!(poll.no_voters.contains(&principal_3));
     }
-
 }

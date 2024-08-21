@@ -37,7 +37,7 @@ pub enum Permission {
     /// Allows calling the endpoints to create a poll
     CreatePoll,
     /// Allows calling the endpoints to vote in a poll
-    VotePoll,    
+    VotePoll,
 }
 
 #[derive(Debug, Clone, Default, CandidType, Deserialize, PartialEq, Eq, serde::Serialize)]
@@ -95,17 +95,13 @@ pub struct Poll {
     pub end_timestamp_millis: u64,
 }
 
-
 /// Describes the type of poll.
 #[derive(
     Debug, Clone, CandidType, Deserialize, Hash, PartialEq, Eq, PartialOrd, Ord, serde::Serialize,
 )]
 pub enum PollType {
     /// A poll to approve a project hash
-    ProjectHash {
-        project: String,
-        hash: String,
-    },
+    ProjectHash { project: String, hash: String },
     /// A poll to add permissions to principals
     AddPermission {
         principals: Vec<Principal>,
