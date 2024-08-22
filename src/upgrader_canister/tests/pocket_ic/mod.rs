@@ -1,4 +1,6 @@
-use candid::{Encode, Principal};
+use std::sync::Arc;
+
+use candid::Principal;
 use ic_canister_client::PocketIcClient;
 use ic_exports::pocket_ic::PocketIc;
 use upgrader_canister_client::UpgraderCanisterClient;
@@ -10,7 +12,7 @@ pub mod wasm_utils;
 pub const ADMIN: Principal = Principal::from_slice(&[212u8; 29]);
 
 /// Deploys the upgrader canister and returns its principal
-pub async fn deploy_canister(env: Option<PocketIc>) -> (PocketIc, Principal) {
+pub async fn deploy_canister(env: Option<PocketIc>) -> (Arc<PocketIc>, Principal) {
     let env = if let Some(env) = env {
         env
     } else {
@@ -20,17 +22,17 @@ pub async fn deploy_canister(env: Option<PocketIc>) -> (PocketIc, Principal) {
     let init_data = UpgraderCanisterInitData {
         admin: ADMIN,
     };
-    let args = Encode!(&(init_data,)).unwrap();
+    let args = candid::encode_args((init_data,)).unwrap();
     let canister = env.create_canister().await;
     env.add_cycles(canister, 10_u128.pow(12)).await;
     env.install_canister(canister, wasm.to_vec(), args, None)
         .await;
-    (env, canister)
+    (Arc::new(env), canister)
 }
 
 /// Builds an upgrader canister client
 pub fn build_client(
-    pocket: PocketIc,
+    pocket: Arc<PocketIc>,
     canister_principal: Principal,
     caller_principal: Principal,
 ) -> UpgraderCanisterClient<PocketIcClient> {

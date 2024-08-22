@@ -195,4 +195,44 @@ mod test {
 
         assert_eq!(project, deserialized);
     }
+
+    #[test]
+    fn test_candid_poll_data() {
+        let poll = Poll {
+            description: "Description".to_string(),
+            poll_type: PollType::ProjectHash {
+                project: "project".to_string(),
+                hash: "hash".to_string(),
+            },
+            no_voters: vec![Principal::from_slice(&[1u8; 29])],
+            yes_voters: vec![Principal::from_slice(&[2u8; 29])],
+            start_timestamp_secs: 0,
+            end_timestamp_secs: 1,
+        };
+
+        let serialized = Encode!(&poll).unwrap();
+        let deserialized = Decode!(serialized.as_slice(), Poll).unwrap();
+
+        assert_eq!(poll, deserialized);
+    }
+
+    #[test]
+    fn test_storable_poll_data() {
+        let poll = Poll {
+            description: "Description".to_string(),
+            poll_type: PollType::AddPermission { 
+                principals: vec![Principal::from_slice(&[1u8; 29])], 
+                permissions: vec![Permission::Admin] 
+            },
+            no_voters: vec![Principal::from_slice(&[1u8; 29])],
+            yes_voters: vec![Principal::from_slice(&[2u8; 29])],
+            start_timestamp_secs: 0,
+            end_timestamp_secs: 1,
+        };
+
+        let serialized = poll.to_bytes();
+        let deserialized = Poll::from_bytes(serialized);
+
+        assert_eq!(poll, deserialized);
+    }
 }

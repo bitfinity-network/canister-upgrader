@@ -58,7 +58,7 @@ impl<C: CanisterClient> UpgraderCanisterClient<C> {
     }
 
     /// Returns a project by key
-    pub async fn project_get(&self, key: &str) -> CanisterClientResult<Result<ProjectData>> {
+    pub async fn project_get(&self, key: &str) -> CanisterClientResult<Option<ProjectData>> {
         self.client.query("project_get", (key, )).await
     }
 
