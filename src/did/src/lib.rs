@@ -92,12 +92,18 @@ impl Storable for ProjectData {
     Debug, Clone, CandidType, Deserialize, Hash, PartialEq, Eq, PartialOrd, Ord, serde::Serialize,
 )]
 pub struct Poll {
+    /// The description of the poll.
     pub description: String,
+    /// The type of poll.
     pub poll_type: PollType,
+    /// The list of principals that voted no.
     pub no_voters: Vec<Principal>,
+    /// The list of principals that voted yes.
     pub yes_voters: Vec<Principal>,
-    pub created_timestamp_millis: u64,
-    pub end_timestamp_millis: u64,
+    /// The timestamp when the poll was created.
+    pub created_timestamp_secs: u64,
+    /// The timestamp when the poll ends.
+    pub end_timestamp_secs: u64,
 }
 
 /// Describes the type of poll.

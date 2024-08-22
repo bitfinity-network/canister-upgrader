@@ -43,10 +43,17 @@ impl<M: Memory> Polls<M> {
     }
 
     /// Votes for a poll. If the voter has already voted, the previous vote is replaced.
-    pub fn vote(&mut self, poll_id: u64, voter_principal: Principal, approved: bool) -> Result<()> {
+    pub fn vote(&mut self, poll_id: u64, voter_principal: Principal, approved: bool, timestamp_secs: u64) -> Result<()> {
         let mut poll = self.polls.get(&poll_id).ok_or_else(|| {
             UpgraderError::BadRequest(format!("Poll with id {} not found", poll_id))
         })?;
+
+        // Check if the poll is closed
+        if timestamp_secs > poll.end_timestamp_secs {
+            return Err(UpgraderError::BadRequest(
+                "The poll is closed".to_string(),
+            ));
+        }
 
         // Remove the voter from the previous vote
         poll.yes_voters.retain(|x| x != &voter_principal);
@@ -75,6 +82,8 @@ impl<M: Memory> Polls<M> {
 
 #[cfg(test)]
 mod test {
+    use std::u64;
+
     use candid::Principal;
     use upgrader_canister_did::PollType;
 
@@ -104,8 +113,8 @@ mod test {
                 project: "project".to_owned(),
                 hash: "hash".to_owned(),
             },
-            created_timestamp_millis: 123456,
-            end_timestamp_millis: 234567,
+            created_timestamp_secs: 123456,
+            end_timestamp_secs: 234567,
         });
 
         let poll_1_id = polls.insert(upgrader_canister_did::Poll {
@@ -116,8 +125,8 @@ mod test {
                 project: "project".to_owned(),
                 hash: "hash".to_owned(),
             },
-            created_timestamp_millis: 123456,
-            end_timestamp_millis: 234567,
+            created_timestamp_secs: 123456,
+            end_timestamp_secs: 234567,
         });
 
         // Assert
@@ -134,7 +143,7 @@ mod test {
         let mut polls = super::Polls::new(&memory_manager);
 
         // Act
-        let result = polls.vote(0, candid::Principal::anonymous(), true);
+        let result = polls.vote(0, candid::Principal::anonymous(), true, 0);
 
         // Assert
         assert!(result.is_err());
@@ -154,8 +163,8 @@ mod test {
                 project: "project".to_owned(),
                 hash: "hash".to_owned(),
             },
-            created_timestamp_millis: 123456,
-            end_timestamp_millis: 234567,
+            created_timestamp_secs: 123456,
+            end_timestamp_secs: 234567,
         });
 
         let principal_1 = Principal::from_slice(&[1, 29]);
@@ -163,9 +172,9 @@ mod test {
         let principal_3 = Principal::from_slice(&[3, 29]);
 
         // Act
-        polls.vote(poll_id, principal_1, true).unwrap();
-        polls.vote(poll_id, principal_2, false).unwrap();
-        polls.vote(poll_id, principal_3, true).unwrap();
+        polls.vote(poll_id, principal_1, true, 0).unwrap();
+        polls.vote(poll_id, principal_2, false, 0).unwrap();
+        polls.vote(poll_id, principal_3, true, 0).unwrap();
 
         // Assert
         let poll = polls.get(&poll_id).unwrap();
@@ -191,8 +200,8 @@ mod test {
                 project: "project".to_owned(),
                 hash: "hash".to_owned(),
             },
-            created_timestamp_millis: 123456,
-            end_timestamp_millis: 234567,
+            created_timestamp_secs: 123456,
+            end_timestamp_secs: 234567,
         });
 
         let principal_1 = Principal::from_slice(&[1, 29]);
@@ -201,12 +210,12 @@ mod test {
         let principal_4 = Principal::from_slice(&[4, 29]);
 
         // Act
-        polls.vote(poll_id, principal_1, true).unwrap();
-        polls.vote(poll_id, principal_2, true).unwrap();
-        polls.vote(poll_id, principal_3, false).unwrap();
-        polls.vote(poll_id, principal_4, false).unwrap();
-        polls.vote(poll_id, principal_1, false).unwrap();
-        polls.vote(poll_id, principal_4, true).unwrap();
+        polls.vote(poll_id, principal_1, true, 0).unwrap();
+        polls.vote(poll_id, principal_2, true, 0).unwrap();
+        polls.vote(poll_id, principal_3, false, 0).unwrap();
+        polls.vote(poll_id, principal_4, false, 0).unwrap();
+        polls.vote(poll_id, principal_1, false, 0).unwrap();
+        polls.vote(poll_id, principal_4, true, 0).unwrap();
 
         // Assert
         let poll = polls.get(&poll_id).unwrap();
@@ -217,5 +226,38 @@ mod test {
         assert!(poll.yes_voters.contains(&principal_4));
         assert!(poll.no_voters.contains(&principal_1));
         assert!(poll.no_voters.contains(&principal_3));
+    }
+
+    /// Should return an error if the poll is closed
+    #[test]
+    fn test_vote_closed_poll() {
+        // Arrange
+        let memory_manager = ic_stable_structures::default_ic_memory_manager();
+        let mut polls = super::Polls::new(&memory_manager);
+
+        let end_ts = 100;
+
+        let poll_id = polls.insert(upgrader_canister_did::Poll {
+            description: "poll_0".to_string(),
+            yes_voters: vec![],
+            no_voters: vec![],
+            poll_type: PollType::ProjectHash {
+                project: "project".to_owned(),
+                hash: "hash".to_owned(),
+            },
+            created_timestamp_secs: 123456,
+            end_timestamp_secs: end_ts,
+        });
+
+        let principal_1 = Principal::from_slice(&[1, 29]);
+
+        // Act & Assert
+        assert!(polls.vote(poll_id, principal_1, true, 0).is_ok());
+        assert!(polls.vote(poll_id, principal_1, true, end_ts-1).is_ok());
+        assert!(polls.vote(poll_id, principal_1, true, end_ts).is_ok());
+        assert!(polls.vote(poll_id, principal_1, true, end_ts+1).is_err());
+        assert!(polls.vote(poll_id, principal_1, true, u64::MAX).is_err());
+
+
     }
 }
