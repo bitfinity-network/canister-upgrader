@@ -1,5 +1,3 @@
-use std::u64;
-
 use candid::Principal;
 use upgrader_canister_did::{Permission, Poll, PollType, ProjectData};
 

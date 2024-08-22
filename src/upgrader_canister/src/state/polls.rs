@@ -93,7 +93,6 @@ impl<M: Memory> Polls<M> {
 
 #[cfg(test)]
 mod test {
-    use std::u64;
 
     use candid::Principal;
     use upgrader_canister_did::PollType;
