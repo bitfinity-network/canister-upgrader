@@ -43,7 +43,13 @@ impl<M: Memory> Polls<M> {
     }
 
     /// Votes for a poll. If the voter has already voted, the previous vote is replaced.
-    pub fn vote(&mut self, poll_id: u64, voter_principal: Principal, approved: bool, timestamp_secs: u64) -> Result<()> {
+    pub fn vote(
+        &mut self,
+        poll_id: u64,
+        voter_principal: Principal,
+        approved: bool,
+        timestamp_secs: u64,
+    ) -> Result<()> {
         let mut poll = self.polls.get(&poll_id).ok_or_else(|| {
             UpgraderError::BadRequest(format!("Poll with id {} not found", poll_id))
         })?;
@@ -57,9 +63,7 @@ impl<M: Memory> Polls<M> {
 
         // Check if the poll is closed
         if timestamp_secs > poll.end_timestamp_secs {
-            return Err(UpgraderError::BadRequest(
-                "The poll is closed".to_string(),
-            ));
+            return Err(UpgraderError::BadRequest("The poll is closed".to_string()));
         }
 
         // Remove the voter from the previous vote
@@ -260,11 +264,10 @@ mod test {
 
         // Act & Assert
         assert!(polls.vote(poll_id, principal_1, true, 0).is_ok());
-        assert!(polls.vote(poll_id, principal_1, true, end_ts-1).is_ok());
+        assert!(polls.vote(poll_id, principal_1, true, end_ts - 1).is_ok());
         assert!(polls.vote(poll_id, principal_1, true, end_ts).is_ok());
-        assert!(polls.vote(poll_id, principal_1, true, end_ts+1).is_err());
+        assert!(polls.vote(poll_id, principal_1, true, end_ts + 1).is_err());
         assert!(polls.vote(poll_id, principal_1, true, u64::MAX).is_err());
-
     }
 
     /// Should return an error if the poll is opened
@@ -292,8 +295,10 @@ mod test {
 
         // Act & Assert
         assert!(polls.vote(poll_id, principal_1, true, start_ts).is_ok());
-        assert!(polls.vote(poll_id, principal_1, true, start_ts+1).is_ok());
-        assert!(polls.vote(poll_id, principal_1, true, start_ts-1).is_err());
+        assert!(polls.vote(poll_id, principal_1, true, start_ts + 1).is_ok());
+        assert!(polls
+            .vote(poll_id, principal_1, true, start_ts - 1)
+            .is_err());
         assert!(polls.vote(poll_id, principal_1, true, 0).is_err());
     }
 }

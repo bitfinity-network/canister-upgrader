@@ -3,7 +3,10 @@ use std::collections::BTreeMap;
 use candid::Principal;
 use ic_canister::{init, post_upgrade, query, update, Canister, MethodType, PreUpdate};
 use ic_exports::ic_kit::ic;
-use upgrader_canister_did::{error::Result, BuildData, Permission, PermissionList, Poll, ProjectData, UpgraderCanisterInitData};
+use upgrader_canister_did::{
+    error::Result, BuildData, Permission, PermissionList, Poll, ProjectData,
+    UpgraderCanisterInitData,
+};
 
 use crate::{build_data::canister_build_data, state::UpgraderCanisterState};
 
@@ -22,13 +25,11 @@ impl PreUpdate for UpgraderCanister {
 }
 
 impl UpgraderCanister {
-
     #[post_upgrade]
     pub fn post_upgrade(&mut self) {}
 
     #[init]
     pub fn init(&mut self, data: UpgraderCanisterInitData) {
-
         STATE.with(|state| {
             let mut permissions = state.permissions.borrow_mut();
             permissions
@@ -110,7 +111,10 @@ impl UpgraderCanister {
     #[update]
     pub fn project_create(&mut self, project: ProjectData) -> Result<()> {
         STATE.with(|state| {
-            state.permissions.borrow().check_has_all_permissions(&ic::caller(), &[Permission::CreateProject])?;
+            state
+                .permissions
+                .borrow()
+                .check_has_all_permissions(&ic::caller(), &[Permission::CreateProject])?;
             state.projects.borrow_mut().insert(project)
         })
     }
@@ -131,7 +135,10 @@ impl UpgraderCanister {
     #[update]
     pub fn poll_create(&mut self, poll: Poll) -> Result<u64> {
         STATE.with(|state| {
-            state.permissions.borrow().check_has_all_permissions(&ic::caller(), &[Permission::CreatePoll])?;
+            state
+                .permissions
+                .borrow()
+                .check_has_all_permissions(&ic::caller(), &[Permission::CreatePoll])?;
             Ok(state.polls.borrow_mut().insert(poll))
         })
     }
@@ -141,11 +148,16 @@ impl UpgraderCanister {
     pub fn poll_vote(&mut self, poll_id: u64, approved: bool) -> Result<()> {
         STATE.with(|state| {
             let caller = ic::caller();
-            state.permissions.borrow().check_has_all_permissions(&caller, &[Permission::VotePoll])?;
-            state.polls.borrow_mut().vote(poll_id, caller, approved, time_secs())
+            state
+                .permissions
+                .borrow()
+                .check_has_all_permissions(&caller, &[Permission::VotePoll])?;
+            state
+                .polls
+                .borrow_mut()
+                .vote(poll_id, caller, approved, time_secs())
         })
     }
-
 }
 
 /// returns the timestamp in seconds

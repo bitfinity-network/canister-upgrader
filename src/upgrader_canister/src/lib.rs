@@ -6,10 +6,9 @@ pub mod constant;
 pub mod state;
 
 pub fn idl() -> String {
-
-    use std::collections::BTreeMap;
     use candid::Principal;
     use ic_canister::Idl;
+    use std::collections::BTreeMap;
     use upgrader_canister_did::*;
 
     let canister_idl = generate_idl!();

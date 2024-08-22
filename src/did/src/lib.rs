@@ -220,9 +220,9 @@ mod test {
     fn test_storable_poll_data() {
         let poll = Poll {
             description: "Description".to_string(),
-            poll_type: PollType::AddPermission { 
-                principals: vec![Principal::from_slice(&[1u8; 29])], 
-                permissions: vec![Permission::Admin] 
+            poll_type: PollType::AddPermission {
+                principals: vec![Principal::from_slice(&[1u8; 29])],
+                permissions: vec![Permission::Admin],
             },
             no_voters: vec![Principal::from_slice(&[1u8; 29])],
             yes_voters: vec![Principal::from_slice(&[2u8; 29])],
