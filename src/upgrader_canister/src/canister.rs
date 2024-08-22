@@ -3,12 +3,13 @@ use std::collections::BTreeMap;
 use candid::Principal;
 use ic_canister::{init, post_upgrade, query, update, Canister, MethodType, PreUpdate};
 use ic_exports::ic_kit::ic;
+use upgrader_canister_did::error::Result;
 use upgrader_canister_did::{
-    error::Result, BuildData, Permission, PermissionList, Poll, ProjectData,
-    UpgraderCanisterInitData,
+    BuildData, Permission, PermissionList, Poll, ProjectData, UpgraderCanisterInitData,
 };
 
-use crate::{build_data::canister_build_data, state::UpgraderCanisterState};
+use crate::build_data::canister_build_data;
+use crate::state::UpgraderCanisterState;
 
 thread_local! {
     pub static STATE: UpgraderCanisterState = UpgraderCanisterState::default();

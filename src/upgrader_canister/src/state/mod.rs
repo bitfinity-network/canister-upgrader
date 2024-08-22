@@ -1,8 +1,8 @@
-use std::{cell::RefCell, rc::Rc};
+use std::cell::RefCell;
+use std::rc::Rc;
 
-use ic_stable_structures::{
-    default_ic_memory_manager, stable_structures::DefaultMemoryImpl, VirtualMemory,
-};
+use ic_stable_structures::stable_structures::DefaultMemoryImpl;
+use ic_stable_structures::{default_ic_memory_manager, VirtualMemory};
 use permission::Permissions;
 use polls::Polls;
 

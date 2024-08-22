@@ -1,10 +1,9 @@
 use candid::Principal;
-
 use ic_stable_structures::stable_structures::Memory;
 use ic_stable_structures::{BTreeMapStructure, MemoryManager, StableBTreeMap};
 use log::info;
-use upgrader_canister_did::error::UpgraderError;
-use upgrader_canister_did::{error::Result, Permission, PermissionList};
+use upgrader_canister_did::error::{Result, UpgraderError};
+use upgrader_canister_did::{Permission, PermissionList};
 
 use crate::constant::PERMISSIONS_MAP_MEMORY_ID;
 

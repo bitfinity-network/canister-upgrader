@@ -2,9 +2,8 @@ use std::collections::BTreeMap;
 
 use candid::Principal;
 use ic_canister_client::{CanisterClient, CanisterClientResult};
-use upgrader_canister_did::{
-    error::Result, BuildData, Permission, PermissionList, Poll, ProjectData,
-};
+use upgrader_canister_did::error::Result;
+use upgrader_canister_did::{BuildData, Permission, PermissionList, Poll, ProjectData};
 
 /// An upgrader canister client.
 #[derive(Debug, Clone)]
