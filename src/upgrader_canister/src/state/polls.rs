@@ -48,6 +48,13 @@ impl<M: Memory> Polls<M> {
             UpgraderError::BadRequest(format!("Poll with id {} not found", poll_id))
         })?;
 
+        // Check if the poll is open
+        if timestamp_secs < poll.start_timestamp_secs {
+            return Err(UpgraderError::BadRequest(
+                "The poll is not opened yet".to_string(),
+            ));
+        }
+
         // Check if the poll is closed
         if timestamp_secs > poll.end_timestamp_secs {
             return Err(UpgraderError::BadRequest(
@@ -113,7 +120,7 @@ mod test {
                 project: "project".to_owned(),
                 hash: "hash".to_owned(),
             },
-            created_timestamp_secs: 123456,
+            start_timestamp_secs: 123456,
             end_timestamp_secs: 234567,
         });
 
@@ -125,7 +132,7 @@ mod test {
                 project: "project".to_owned(),
                 hash: "hash".to_owned(),
             },
-            created_timestamp_secs: 123456,
+            start_timestamp_secs: 123456,
             end_timestamp_secs: 234567,
         });
 
@@ -163,7 +170,7 @@ mod test {
                 project: "project".to_owned(),
                 hash: "hash".to_owned(),
             },
-            created_timestamp_secs: 123456,
+            start_timestamp_secs: 0,
             end_timestamp_secs: 234567,
         });
 
@@ -200,7 +207,7 @@ mod test {
                 project: "project".to_owned(),
                 hash: "hash".to_owned(),
             },
-            created_timestamp_secs: 123456,
+            start_timestamp_secs: 0,
             end_timestamp_secs: 234567,
         });
 
@@ -245,7 +252,7 @@ mod test {
                 project: "project".to_owned(),
                 hash: "hash".to_owned(),
             },
-            created_timestamp_secs: 123456,
+            start_timestamp_secs: 0,
             end_timestamp_secs: end_ts,
         });
 
@@ -258,6 +265,35 @@ mod test {
         assert!(polls.vote(poll_id, principal_1, true, end_ts+1).is_err());
         assert!(polls.vote(poll_id, principal_1, true, u64::MAX).is_err());
 
+    }
 
+    /// Should return an error if the poll is opened
+    #[test]
+    fn test_vote_opened_poll() {
+        // Arrange
+        let memory_manager = ic_stable_structures::default_ic_memory_manager();
+        let mut polls = super::Polls::new(&memory_manager);
+
+        let start_ts = 100;
+
+        let poll_id = polls.insert(upgrader_canister_did::Poll {
+            description: "poll_0".to_string(),
+            yes_voters: vec![],
+            no_voters: vec![],
+            poll_type: PollType::ProjectHash {
+                project: "project".to_owned(),
+                hash: "hash".to_owned(),
+            },
+            start_timestamp_secs: start_ts,
+            end_timestamp_secs: u64::MAX,
+        });
+
+        let principal_1 = Principal::from_slice(&[1, 29]);
+
+        // Act & Assert
+        assert!(polls.vote(poll_id, principal_1, true, start_ts).is_ok());
+        assert!(polls.vote(poll_id, principal_1, true, start_ts+1).is_ok());
+        assert!(polls.vote(poll_id, principal_1, true, start_ts-1).is_err());
+        assert!(polls.vote(poll_id, principal_1, true, 0).is_err());
     }
 }

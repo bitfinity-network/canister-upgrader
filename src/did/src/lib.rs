@@ -100,9 +100,9 @@ pub struct Poll {
     pub no_voters: Vec<Principal>,
     /// The list of principals that voted yes.
     pub yes_voters: Vec<Principal>,
-    /// The timestamp when the poll was created.
-    pub created_timestamp_secs: u64,
-    /// The timestamp when the poll ends.
+    /// The timestamp when the poll opens.
+    pub start_timestamp_secs: u64,
+    /// The timestamp when the poll closes.
     pub end_timestamp_secs: u64,
 }
 
