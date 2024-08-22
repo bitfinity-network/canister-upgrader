@@ -6,4 +6,5 @@ edition.workspace = true
 [dependencies]
 upgrader_canister_did = { workspace = true }
 
+candid = { workspace = true }
 ic-canister-client = { workspace = true }

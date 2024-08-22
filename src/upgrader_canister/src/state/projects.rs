@@ -17,6 +17,11 @@ impl<M: Memory> Projects<M> {
         }
     }
 
+    /// Returns all projects
+    pub fn all(&self) -> Vec<ProjectData> {
+        self.projects.iter().map(|(_k, v)| v).collect()
+    }
+
     /// Returns the project data for the given key
     pub fn get(&self, key: &String) -> Option<ProjectData> {
         self.projects.get(key)
@@ -98,7 +103,12 @@ mod test {
         assert!(projects.insert(project2.clone()).is_ok());
 
         // Assert
-        assert_eq!(projects.get(&project1.key), Some(project1));
-        assert_eq!(projects.get(&project2.key), Some(project2));
+        assert_eq!(projects.get(&project1.key), Some(project1.clone()));
+        assert_eq!(projects.get(&project2.key), Some(project2.clone()));
+
+        let all = projects.all();
+        assert_eq!(all.len(), 2);
+        assert_eq!(all[0], project1);
+        assert_eq!(all[1], project2);
     }
 }

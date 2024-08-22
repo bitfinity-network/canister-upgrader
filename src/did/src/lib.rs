@@ -7,6 +7,8 @@ use serde::{Deserialize, Serialize};
 pub mod codec;
 pub mod error;
 
+pub use error::*;
+
 /// Contains the build data.
 #[derive(Debug, Clone, Serialize, Deserialize, CandidType)]
 pub struct BuildData {
@@ -23,7 +25,10 @@ pub struct BuildData {
 }
 
 #[derive(Debug, Clone, CandidType, Deserialize)]
-pub struct UpgraderCanisterInitData {}
+pub struct UpgraderCanisterInitData {
+    /// Admin of the EVM Canister
+    pub admin: Principal,
+}
 
 /// Principal specific permission
 #[derive(

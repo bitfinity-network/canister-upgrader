@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use candid::Principal;
 use ic_stable_structures::stable_structures::Memory;
 use ic_stable_structures::{
@@ -26,6 +28,11 @@ impl<M: Memory> Polls<M> {
     /// Returns the poll data for the given key
     pub fn get(&self, id: &u64) -> Option<Poll> {
         self.polls.get(id)
+    }
+
+    /// Returns all polls
+    pub fn all(&self) -> BTreeMap<u64, Poll> {
+        self.polls.iter().collect()
     }
 
     /// Inserts a new poll and returns the generated key

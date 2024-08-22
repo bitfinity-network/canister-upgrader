@@ -2290,6 +2290,7 @@ dependencies = [
 name = "upgrader_canister_client"
 version = "0.1.0"
 dependencies = [
+ "candid",
  "ic-canister-client",
  "upgrader_canister_did",
 ]
