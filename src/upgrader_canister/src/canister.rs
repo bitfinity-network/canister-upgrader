@@ -6,7 +6,8 @@ use ic_exports::ic_kit::ic;
 use ic_stable_structures::stable_structures::Memory;
 use upgrader_canister_did::error::Result;
 use upgrader_canister_did::{
-    BuildData, Permission, PermissionList, Poll, PollType, ProjectData, UpgraderCanisterInitData, UpgraderError
+    BuildData, Permission, PermissionList, Poll, PollType, ProjectData, UpgraderCanisterInitData,
+    UpgraderError,
 };
 
 use crate::build_data::canister_build_data;
@@ -168,9 +169,14 @@ impl UpgraderCanister {
     pub fn poll_create(&mut self, poll: Poll) -> Result<u64> {
         STATE.with(|state| {
             Self::poll_create_inspect(&state.permissions.borrow(), &ic::caller())?;
-            
+
             if let PollType::ProjectHash { project, hash: _ } = &poll.poll_type {
-                state.projects.borrow().get(project).ok_or_else(|| UpgraderError::BadRequest(format!("Cannot create poll, project [{}] does not exist", project)))?;
+                state.projects.borrow().get(project).ok_or_else(|| {
+                    UpgraderError::BadRequest(format!(
+                        "Cannot create poll, project [{}] does not exist",
+                        project
+                    ))
+                })?;
             }
 
             Ok(state.polls.borrow_mut().insert(poll))

@@ -363,7 +363,10 @@ async fn test_caller_cant_create_poll_for_not_existing_project() {
     let user_1_principal = Principal::from_slice(&[1u8; 29]);
     let user_1_client = build_client(pocket.clone(), canister_principal, user_1_principal);
     admin_client
-        .admin_permissions_add(user_1_principal, &[Permission::CreatePoll, Permission::VotePoll])
+        .admin_permissions_add(
+            user_1_principal,
+            &[Permission::CreatePoll, Permission::VotePoll],
+        )
         .await
         .unwrap()
         .unwrap();
@@ -379,10 +382,9 @@ async fn test_caller_cant_create_poll_for_not_existing_project() {
         start_timestamp_secs: 0,
         end_timestamp_secs: 1,
     };
-    
+
     // Act & Assert
     assert!(user_1_client.poll_create(&poll).await.unwrap().is_err());
-
 }
 
 /// Test that the caller can't create polls if not allowed
@@ -564,7 +566,7 @@ async fn create_project(pocket: Arc<PocketIc>, canister_principal: Principal, pr
         .unwrap()
         .unwrap();
 
-        // Act
+    // Act
     let project = ProjectData {
         key: project_key.to_string(),
         name: format!("Project {}", project_key),
