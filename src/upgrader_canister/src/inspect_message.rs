@@ -1,9 +1,10 @@
-use crate::{canister::UpgraderCanister, state::UpgraderCanisterState};
-
 // required by the inspect_message macro
 #[allow(unused_imports)]
 use ic_exports::ic_cdk::{self, api};
 use ic_exports::ic_kit::ic;
+
+use crate::canister::UpgraderCanister;
+use crate::state::UpgraderCanisterState;
 
 /// NOTE: inspect is disabled for non-wasm targets because without it we are getting a weird compilation error
 /// in CI:
@@ -16,7 +17,6 @@ fn inspect_messages() {
 
 #[allow(dead_code)]
 fn inspect_message_impl(state: &UpgraderCanisterState) {
-
     let permissions = state.permissions.borrow();
     let method = api::call::method_name();
 
