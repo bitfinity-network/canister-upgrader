@@ -17,6 +17,13 @@ fn inspect_messages() {
 
 #[allow(dead_code)]
 fn inspect_message_impl(state: &UpgraderCanisterState) {
+
+    // If inspect message is disabled, accept the message
+    if state.settings.borrow().is_inspect_message_disabled() {
+        api::call::accept_message();
+        return;
+    }
+
     let permissions = state.permissions.borrow();
     let method = api::call::method_name();
 
