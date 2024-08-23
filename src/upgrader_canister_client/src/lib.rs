@@ -61,6 +61,17 @@ impl<C: CanisterClient> UpgraderCanisterClient<C> {
             .await
     }
 
+    /// Disable/Enable the inspect message
+    pub async fn admin_disable_inspect_message(&self, value: bool) -> CanisterClientResult<Result<()>> {
+        self.client.update("admin_disable_inspect_message", (value,)).await
+    }
+
+    /// Returns whether the inspect message is disabled.
+    pub async fn is_inspect_message_disabled(&self) -> CanisterClientResult<bool> {
+        self.client.query("is_inspect_message_disabled", ()).await
+    }
+            
+
     /// Returns the permissions of the caller
     pub async fn caller_permissions_get(&self) -> CanisterClientResult<Result<PermissionList>> {
         self.client.query("caller_permissions_get", ()).await

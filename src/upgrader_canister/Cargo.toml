@@ -11,6 +11,7 @@ ic-log = { workspace = true }
 ic-storage = { workspace = true }
 ic-stable-structures = { workspace = true }
 log = { workspace = true }
+serde = { workspace = true }
 upgrader_canister_did = { workspace = true }
 
 [dev-dependencies]

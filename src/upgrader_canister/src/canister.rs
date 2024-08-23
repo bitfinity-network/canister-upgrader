@@ -89,6 +89,27 @@ impl UpgraderCanister {
         })
     }
 
+        /// Disable/Enable the inspect message
+        #[update]
+        pub fn admin_disable_inspect_message(&mut self, value: bool) -> Result<()> {
+            STATE.with(|state| {
+                state.permissions.borrow().check_admin(&ic::caller())?;
+                state
+                    .settings
+                    .borrow_mut()
+                    .disable_inspect_message(value);
+                Ok(())
+            })
+        }
+    
+        /// Returns whether the inspect message is disabled.
+        #[query]
+        pub fn is_inspect_message_disabled(&self) -> bool {
+            STATE.with(|state| {
+                state.settings.borrow().is_inspect_message_disabled()
+            })
+        }
+
     /// Returns the permissions of the caller
     #[query]
     pub fn caller_permissions_get(&self) -> Result<PermissionList> {

@@ -130,6 +130,46 @@ async fn test_only_admin_can_manage_permissions() {
         .is_err());
 }
 
+/// Test that the admin can disable/enable the inspect message
+#[tokio::test]
+async fn test_admin_can_disable_inspect_message() {
+    // Arrange
+    let (pocket, canister_principal) = deploy_canister(None).await;
+    let caller_principal = ADMIN;
+    let client = build_client(pocket, canister_principal, caller_principal);
+
+    // Act
+    let inspect_message_disabled_before = client.is_inspect_message_disabled().await.unwrap();
+    client
+        .admin_disable_inspect_message(true)
+        .await
+        .unwrap()
+        .unwrap();
+    let inspect_message_disabled_after = client.is_inspect_message_disabled().await.unwrap();
+
+    // Assert
+    assert!(!inspect_message_disabled_before);
+    assert!(inspect_message_disabled_after);
+}
+
+/// Test that only the admin can disable/enable the inspect message
+#[tokio::test]
+async fn test_only_admin_can_disable_inspect_message() {
+    // Arrange
+    let (pocket, canister_principal) = deploy_canister(None).await;
+    let caller_principal = Principal::from_slice(&[1u8; 29]);
+    let client = build_client(pocket, canister_principal, caller_principal);
+
+    // Act & Assert
+    assert!(client.is_inspect_message_disabled().await.unwrap());
+    assert!(client
+        .admin_disable_inspect_message(true)
+        .await
+        .unwrap()
+        .is_err());
+}
+
+
 /// Test that the caller can get their own permissions
 #[tokio::test]
 async fn test_caller_can_get_own_permissions() {

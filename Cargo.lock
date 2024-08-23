@@ -2280,6 +2280,7 @@ dependencies = [
  "ic-storage",
  "log",
  "rand",
+ "serde",
  "tokio",
  "upgrader_canister_client",
  "upgrader_canister_did",
