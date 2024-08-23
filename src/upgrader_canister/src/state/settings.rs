@@ -1,7 +1,8 @@
 use std::borrow::Cow;
 
 use candid::{CandidType, Deserialize};
-use ic_stable_structures::{stable_structures::Memory, Bound, CellStructure, MemoryManager, StableCell, Storable};
+use ic_stable_structures::stable_structures::Memory;
+use ic_stable_structures::{Bound, CellStructure, MemoryManager, StableCell, Storable};
 use serde::Serialize;
 use upgrader_canister_did::codec;
 
@@ -20,40 +21,38 @@ impl<M: Memory> Settings<M> {
         )
         .expect("failed to initialize settings in stable memory");
 
-        Self {
-            settings,
-        }
+        Self { settings }
     }
 
-        /// Disable the inspect message
-        pub fn disable_inspect_message(&mut self, disable: bool) {
-            self.update(|s| {
-                s.disable_inspect_message = disable;
-            });
-        }
-    
-        /// Returns true if the inspect message is disabled
-        pub fn is_inspect_message_disabled(&self) -> bool {
-            self.read(|s| s.disable_inspect_message)
-        }
+    /// Disable the inspect message
+    pub fn disable_inspect_message(&mut self, disable: bool) {
+        self.update(|s| {
+            s.disable_inspect_message = disable;
+        });
+    }
 
-        fn read<F, T>(&self, f: F) -> T
-        where
-            for<'a> F: FnOnce(&'a SettingsData) -> T,
-        {
-            f(self.settings.get())
-        }
-    
-        fn update<F, T>(&mut self, f: F) -> T
-        where
-            for<'a> F: FnOnce(&'a mut SettingsData) -> T,
-        {
-            let cell = &mut self.settings;
-            let mut new_settings = cell.get().clone();
-            let result = f(&mut new_settings);
-            cell.set(new_settings).expect("failed to set evm settings");
-            result
-        }
+    /// Returns true if the inspect message is disabled
+    pub fn is_inspect_message_disabled(&self) -> bool {
+        self.read(|s| s.disable_inspect_message)
+    }
+
+    fn read<F, T>(&self, f: F) -> T
+    where
+        for<'a> F: FnOnce(&'a SettingsData) -> T,
+    {
+        f(self.settings.get())
+    }
+
+    fn update<F, T>(&mut self, f: F) -> T
+    where
+        for<'a> F: FnOnce(&'a mut SettingsData) -> T,
+    {
+        let cell = &mut self.settings;
+        let mut new_settings = cell.get().clone();
+        let result = f(&mut new_settings);
+        cell.set(new_settings).expect("failed to set evm settings");
+        result
+    }
 }
 
 #[derive(Debug, Deserialize, CandidType, Clone, PartialEq, Eq, Serialize)]
@@ -84,7 +83,7 @@ impl Storable for SettingsData {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     #[test]
     fn test_storable_settings_data() {
         let settings = SettingsData::default();
@@ -110,5 +109,4 @@ mod tests {
         settings.disable_inspect_message(true);
         assert_eq!(settings.is_inspect_message_disabled(), true);
     }
-
 }

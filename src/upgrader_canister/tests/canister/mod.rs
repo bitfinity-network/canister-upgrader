@@ -169,7 +169,6 @@ async fn test_only_admin_can_disable_inspect_message() {
         .is_err());
 }
 
-
 /// Test that the caller can get their own permissions
 #[tokio::test]
 async fn test_caller_can_get_own_permissions() {
