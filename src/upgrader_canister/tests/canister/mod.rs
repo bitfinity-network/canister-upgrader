@@ -312,6 +312,8 @@ async fn test_caller_can_create_and_get_polls() {
     let (pocket, canister_principal) = deploy_canister(None).await;
 
     let admin_client = build_client(pocket.clone(), canister_principal, ADMIN);
+    let project_key = "project-0";
+    create_project(pocket.clone(), canister_principal, project_key).await;
 
     // User with permission to create polls
     let user_1_principal = Principal::from_slice(&[1u8; 29]);
@@ -330,7 +332,7 @@ async fn test_caller_can_create_and_get_polls() {
     let poll = Poll {
         description: "Description".to_string(),
         poll_type: PollType::ProjectHash {
-            project: "project".to_string(),
+            project: project_key.to_string(),
             hash: "hash".to_string(),
         },
         no_voters: vec![Principal::from_slice(&[1u8; 29])],
@@ -349,6 +351,40 @@ async fn test_caller_can_create_and_get_polls() {
     assert_eq!(poll_from_get, poll);
 }
 
+/// Test that the caller cannot create a poll for a not existing project
+#[tokio::test]
+async fn test_caller_cant_create_poll_for_not_existing_project() {
+    // Arrange
+    let (pocket, canister_principal) = deploy_canister(None).await;
+
+    let admin_client = build_client(pocket.clone(), canister_principal, ADMIN);
+
+    // User with permission to create polls
+    let user_1_principal = Principal::from_slice(&[1u8; 29]);
+    let user_1_client = build_client(pocket.clone(), canister_principal, user_1_principal);
+    admin_client
+        .admin_permissions_add(user_1_principal, &[Permission::CreatePoll, Permission::VotePoll])
+        .await
+        .unwrap()
+        .unwrap();
+
+    let poll = Poll {
+        description: "Description".to_string(),
+        poll_type: PollType::ProjectHash {
+            project: "project".to_string(),
+            hash: "hash".to_string(),
+        },
+        no_voters: vec![Principal::from_slice(&[1u8; 29])],
+        yes_voters: vec![Principal::from_slice(&[2u8; 29])],
+        start_timestamp_secs: 0,
+        end_timestamp_secs: 1,
+    };
+    
+    // Act & Assert
+    assert!(user_1_client.poll_create(&poll).await.unwrap().is_err());
+
+}
+
 /// Test that the caller can't create polls if not allowed
 #[tokio::test]
 async fn test_caller_cant_create_polls_if_not_allowed() {
@@ -357,11 +393,14 @@ async fn test_caller_cant_create_polls_if_not_allowed() {
     let user_1_principal = Principal::from_slice(&[1u8; 29]);
     let user_1_client = build_client(pocket.clone(), canister_principal, user_1_principal);
 
+    let project_key = "project-1";
+    create_project(pocket.clone(), canister_principal, project_key).await;
+
     // Act
     let poll = Poll {
         description: "Description".to_string(),
         poll_type: PollType::ProjectHash {
-            project: "project".to_string(),
+            project: project_key.to_string(),
             hash: "hash".to_string(),
         },
         no_voters: vec![Principal::from_slice(&[1u8; 29])],
@@ -395,6 +434,9 @@ async fn test_caller_can_vote_in_poll() {
     let user_2_client = build_client(pocket.clone(), canister_principal, user_2_principal);
     let admin_client = build_client(pocket.clone(), canister_principal, ADMIN);
 
+    let project_key = "project-10";
+    create_project(pocket.clone(), canister_principal, project_key).await;
+
     admin_client
         .admin_permissions_add(
             user_1_principal,
@@ -412,7 +454,7 @@ async fn test_caller_can_vote_in_poll() {
     let poll = Poll {
         description: "Description".to_string(),
         poll_type: PollType::ProjectHash {
-            project: "project".to_string(),
+            project: project_key.to_string(),
             hash: "hash".to_string(),
         },
         no_voters: vec![],
@@ -453,6 +495,9 @@ async fn test_caller_cant_vote_in_poll_if_not_allowed() {
     let user_2_client = build_client(pocket.clone(), canister_principal, user_2_principal);
     let admin_client = build_client(pocket.clone(), canister_principal, ADMIN);
 
+    let project_key = "project-10";
+    create_project(pocket.clone(), canister_principal, project_key).await;
+
     admin_client
         .admin_permissions_add(user_1_principal, &[Permission::CreatePoll])
         .await
@@ -462,7 +507,7 @@ async fn test_caller_cant_vote_in_poll_if_not_allowed() {
     let poll = Poll {
         description: "Description".to_string(),
         poll_type: PollType::ProjectHash {
-            project: "project".to_string(),
+            project: project_key.to_string(),
             hash: "hash".to_string(),
         },
         no_voters: vec![],
@@ -503,6 +548,30 @@ async fn disable_inspect_message(pocket: Arc<PocketIc>, canister_principal: Prin
     let admin_client = build_client(pocket, canister_principal, ADMIN);
     admin_client
         .admin_disable_inspect_message(true)
+        .await
+        .unwrap()
+        .unwrap();
+}
+
+async fn create_project(pocket: Arc<PocketIc>, canister_principal: Principal, project_key: &str) {
+    let user_1_principal = Principal::from_slice(&[199u8; 29]);
+    let user_1_client = build_client(pocket.clone(), canister_principal, user_1_principal);
+    let admin_client = build_client(pocket.clone(), canister_principal, ADMIN);
+
+    admin_client
+        .admin_permissions_add(user_1_principal, &[Permission::CreateProject])
+        .await
+        .unwrap()
+        .unwrap();
+
+        // Act
+    let project = ProjectData {
+        key: project_key.to_string(),
+        name: format!("Project {}", project_key),
+        description: format!("Description {}", project_key),
+    };
+    user_1_client
+        .project_create(&project)
         .await
         .unwrap()
         .unwrap();
