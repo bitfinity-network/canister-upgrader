@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The upgrader is a canister allows the creation of polls to approve upgrade of other canisters.
+The upgrader canister allows the creation of polls to approve upgrade of other canisters.
 This is achieved by allowing registered voters to approve or reject upgrades identified by unique hashes.
 
 ## Poll types
