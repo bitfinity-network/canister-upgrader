@@ -55,17 +55,9 @@ impl<M: Memory> Settings<M> {
     }
 }
 
-#[derive(Debug, Deserialize, CandidType, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Default, Deserialize, CandidType, Clone, PartialEq, Eq, Serialize)]
 pub struct SettingsData {
     disable_inspect_message: bool,
-}
-
-impl Default for SettingsData {
-    fn default() -> Self {
-        Self {
-            disable_inspect_message: false,
-        }
-    }
 }
 
 impl Storable for SettingsData {
