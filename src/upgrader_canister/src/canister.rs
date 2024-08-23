@@ -6,7 +6,8 @@ use ic_exports::ic_kit::ic;
 use ic_stable_structures::stable_structures::Memory;
 use upgrader_canister_did::error::Result;
 use upgrader_canister_did::{
-    BuildData, Permission, PermissionList, Poll, PollCreateData, PollType, ProjectData, UpgraderCanisterInitData, UpgraderError
+    BuildData, Permission, PermissionList, Poll, PollCreateData, PollType, ProjectData,
+    UpgraderCanisterInitData, UpgraderError,
 };
 
 use crate::build_data::canister_build_data;
