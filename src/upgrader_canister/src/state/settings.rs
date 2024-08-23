@@ -90,15 +90,15 @@ mod tests {
     #[test]
     fn test_default_inspect_message_disabled() {
         let settings = SettingsData::default();
-        assert_eq!(settings.disable_inspect_message, false);
+        assert!(!settings.disable_inspect_message);
     }
 
     /// Test disabling the inspect message
     #[test]
     fn test_disable_inspect_message() {
         let mut settings = Settings::new(&ic_stable_structures::default_ic_memory_manager());
-        assert_eq!(settings.is_inspect_message_disabled(), false);
+        assert!(!settings.is_inspect_message_disabled());
         settings.disable_inspect_message(true);
-        assert_eq!(settings.is_inspect_message_disabled(), true);
+        assert!(settings.is_inspect_message_disabled());
     }
 }
