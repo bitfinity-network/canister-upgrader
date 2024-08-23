@@ -3,7 +3,7 @@ use std::sync::Arc;
 use candid::Principal;
 use ic_canister_client::CanisterClientResult;
 use ic_exports::pocket_ic::PocketIc;
-use upgrader_canister_did::{Permission, Poll, PollType, ProjectData};
+use upgrader_canister_did::{Permission, PollCreateData, PollType, ProjectData};
 
 use crate::pocket_ic::{build_client, deploy_canister, ADMIN};
 
@@ -329,14 +329,12 @@ async fn test_caller_can_create_and_get_polls() {
     let user_2_client = build_client(pocket, canister_principal, user_2_principal);
 
     // Act
-    let poll = Poll {
+    let poll = PollCreateData {
         description: "Description".to_string(),
         poll_type: PollType::ProjectHash {
             project: project_key.to_string(),
             hash: "hash".to_string(),
         },
-        no_voters: vec![Principal::from_slice(&[1u8; 29])],
-        yes_voters: vec![Principal::from_slice(&[2u8; 29])],
         start_timestamp_secs: 0,
         end_timestamp_secs: 1,
     };
@@ -345,10 +343,10 @@ async fn test_caller_can_create_and_get_polls() {
     // Assert
     let polls = user_2_client.poll_get_all().await.unwrap();
     assert_eq!(polls.len(), 1);
-    assert_eq!(polls[&poll_id], poll);
+    assert_eq!(polls[&poll_id], poll.clone().into());
 
     let poll_from_get = user_2_client.poll_get(poll_id).await.unwrap().unwrap();
-    assert_eq!(poll_from_get, poll);
+    assert_eq!(poll_from_get, poll.into());
 }
 
 /// Test that the caller cannot create a poll for a not existing project
@@ -371,14 +369,12 @@ async fn test_caller_cant_create_poll_for_not_existing_project() {
         .unwrap()
         .unwrap();
 
-    let poll = Poll {
+    let poll = PollCreateData {
         description: "Description".to_string(),
         poll_type: PollType::ProjectHash {
             project: "project".to_string(),
             hash: "hash".to_string(),
         },
-        no_voters: vec![Principal::from_slice(&[1u8; 29])],
-        yes_voters: vec![Principal::from_slice(&[2u8; 29])],
         start_timestamp_secs: 0,
         end_timestamp_secs: 1,
     };
@@ -399,14 +395,12 @@ async fn test_caller_cant_create_polls_if_not_allowed() {
     create_project(pocket.clone(), canister_principal, project_key).await;
 
     // Act
-    let poll = Poll {
+    let poll = PollCreateData {
         description: "Description".to_string(),
         poll_type: PollType::ProjectHash {
             project: project_key.to_string(),
             hash: "hash".to_string(),
         },
-        no_voters: vec![Principal::from_slice(&[1u8; 29])],
-        yes_voters: vec![Principal::from_slice(&[2u8; 29])],
         start_timestamp_secs: 0,
         end_timestamp_secs: 1,
     };
@@ -453,14 +447,12 @@ async fn test_caller_can_vote_in_poll() {
         .unwrap()
         .unwrap();
 
-    let poll = Poll {
+    let poll = PollCreateData {
         description: "Description".to_string(),
         poll_type: PollType::ProjectHash {
             project: project_key.to_string(),
             hash: "hash".to_string(),
         },
-        no_voters: vec![],
-        yes_voters: vec![],
         start_timestamp_secs: 0,
         end_timestamp_secs: u64::MAX,
     };
@@ -506,14 +498,12 @@ async fn test_caller_cant_vote_in_poll_if_not_allowed() {
         .unwrap()
         .unwrap();
 
-    let poll = Poll {
+    let poll = PollCreateData {
         description: "Description".to_string(),
         poll_type: PollType::ProjectHash {
             project: project_key.to_string(),
             hash: "hash".to_string(),
         },
-        no_voters: vec![],
-        yes_voters: vec![],
         start_timestamp_secs: 0,
         end_timestamp_secs: u64::MAX,
     };

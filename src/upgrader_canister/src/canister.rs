@@ -6,8 +6,7 @@ use ic_exports::ic_kit::ic;
 use ic_stable_structures::stable_structures::Memory;
 use upgrader_canister_did::error::Result;
 use upgrader_canister_did::{
-    BuildData, Permission, PermissionList, Poll, PollType, ProjectData, UpgraderCanisterInitData,
-    UpgraderError,
+    BuildData, Permission, PermissionList, Poll, PollCreateData, PollType, ProjectData, UpgraderCanisterInitData, UpgraderError
 };
 
 use crate::build_data::canister_build_data;
@@ -166,7 +165,7 @@ impl UpgraderCanister {
 
     /// Creates a new poll and returns the generated poll id
     #[update]
-    pub fn poll_create(&mut self, poll: Poll) -> Result<u64> {
+    pub fn poll_create(&mut self, poll: PollCreateData) -> Result<u64> {
         STATE.with(|state| {
             Self::poll_create_inspect(&state.permissions.borrow(), &ic::caller())?;
 

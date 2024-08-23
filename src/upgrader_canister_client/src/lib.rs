@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use candid::Principal;
 use ic_canister_client::{CanisterClient, CanisterClientResult};
 use upgrader_canister_did::error::Result;
-use upgrader_canister_did::{BuildData, Permission, PermissionList, Poll, ProjectData};
+use upgrader_canister_did::{BuildData, Permission, PermissionList, Poll, PollCreateData, ProjectData};
 
 /// An upgrader canister client.
 #[derive(Debug, Clone)]
@@ -107,7 +107,7 @@ impl<C: CanisterClient> UpgraderCanisterClient<C> {
     }
 
     /// Creates a new poll and returns the generated poll id
-    pub async fn poll_create(&self, poll: &Poll) -> CanisterClientResult<Result<u64>> {
+    pub async fn poll_create(&self, poll: &PollCreateData) -> CanisterClientResult<Result<u64>> {
         self.client.update("poll_create", (poll,)).await
     }
 

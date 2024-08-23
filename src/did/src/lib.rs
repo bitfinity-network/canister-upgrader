@@ -87,6 +87,21 @@ impl Storable for ProjectData {
     const BOUND: ic_stable_structures::Bound = ic_stable_structures::Bound::Unbounded;
 }
 
+/// Data required to create a poll.
+#[derive(
+    Debug, Clone, CandidType, Deserialize, Hash, PartialEq, Eq, PartialOrd, Ord, serde::Serialize,
+)]
+pub struct PollCreateData {
+    /// The description of the poll.
+    pub description: String,
+    /// The type of poll.
+    pub poll_type: PollType,
+    /// The timestamp when the poll opens.
+    pub start_timestamp_secs: u64,
+    /// The timestamp when the poll closes.
+    pub end_timestamp_secs: u64,
+}
+
 /// Describes the type of poll.
 #[derive(
     Debug, Clone, CandidType, Deserialize, Hash, PartialEq, Eq, PartialOrd, Ord, serde::Serialize,
@@ -104,6 +119,19 @@ pub struct Poll {
     pub start_timestamp_secs: u64,
     /// The timestamp when the poll closes.
     pub end_timestamp_secs: u64,
+}
+
+impl From<PollCreateData> for Poll {
+    fn from(value: PollCreateData) -> Self {
+        Self {
+            description: value.description,
+            poll_type: value.poll_type,
+            no_voters: Vec::new(),
+            yes_voters: Vec::new(),
+            start_timestamp_secs: value.start_timestamp_secs,
+            end_timestamp_secs: value.end_timestamp_secs,
+        }
+    }
 }
 
 /// Describes the type of poll.
