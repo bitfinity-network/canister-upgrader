@@ -3,12 +3,14 @@ use std::collections::BTreeMap;
 use candid::Principal;
 use ic_canister::{init, post_upgrade, query, update, Canister, MethodType, PreUpdate};
 use ic_exports::ic_kit::ic;
+use ic_stable_structures::stable_structures::Memory;
 use upgrader_canister_did::error::Result;
 use upgrader_canister_did::{
     BuildData, Permission, PermissionList, Poll, ProjectData, UpgraderCanisterInitData,
 };
 
 use crate::build_data::canister_build_data;
+use crate::state::permission::Permissions;
 use crate::state::UpgraderCanisterState;
 
 thread_local! {
@@ -108,14 +110,19 @@ impl UpgraderCanister {
         STATE.with(|state| state.projects.borrow().get(&key))
     }
 
+    /// Inspects permissions for the project_create method
+    pub fn project_create_inspect<M: Memory>(permissions: &Permissions<M>, caller: &Principal) -> Result<()> {
+        permissions
+                .check_has_all_permissions(caller, &[Permission::CreateProject])
+    }
+
     /// Creates a new project
     #[update]
     pub fn project_create(&mut self, project: ProjectData) -> Result<()> {
         STATE.with(|state| {
-            state
+            Self::project_create_inspect(&state
                 .permissions
-                .borrow()
-                .check_has_all_permissions(&ic::caller(), &[Permission::CreateProject])?;
+                .borrow(), &ic::caller())?;
             state.projects.borrow_mut().insert(project)
         })
     }
@@ -132,27 +139,37 @@ impl UpgraderCanister {
         STATE.with(|state| state.polls.borrow().get(&id))
     }
 
+        /// Inspects permissions for the poll_create method
+        pub fn poll_create_inspect<M: Memory>(permissions: &Permissions<M>, caller: &Principal) -> Result<()> {
+            permissions
+                    .check_has_all_permissions(caller, &[Permission::CreatePoll])
+        }
+
     /// Creates a new poll and returns the generated poll id
     #[update]
     pub fn poll_create(&mut self, poll: Poll) -> Result<u64> {
         STATE.with(|state| {
-            state
+            Self::poll_create_inspect(&state
                 .permissions
-                .borrow()
-                .check_has_all_permissions(&ic::caller(), &[Permission::CreatePoll])?;
+                .borrow(), &ic::caller())?;
             Ok(state.polls.borrow_mut().insert(poll))
         })
     }
+
+            /// Inspects permissions for the poll_vote method
+            pub fn poll_vote_inspect<M: Memory>(permissions: &Permissions<M>, caller: &Principal) -> Result<()> {
+                permissions
+                        .check_has_all_permissions(caller, &[Permission::VotePoll])
+            }
 
     /// Votes for a poll. If the voter has already voted, the previous vote is replaced.
     #[update]
     pub fn poll_vote(&mut self, poll_id: u64, approved: bool) -> Result<()> {
         STATE.with(|state| {
             let caller = ic::caller();
-            state
+            Self::poll_vote_inspect(&state
                 .permissions
-                .borrow()
-                .check_has_all_permissions(&caller, &[Permission::VotePoll])?;
+                .borrow(), &caller)?;
             state
                 .polls
                 .borrow_mut()
