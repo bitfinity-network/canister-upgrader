@@ -1,4 +1,8 @@
+use std::sync::Arc;
+
 use candid::Principal;
+use ic_canister_client::CanisterClientResult;
+use ic_exports::pocket_ic::PocketIc;
 use upgrader_canister_did::{Permission, Poll, PollType, ProjectData};
 
 use crate::pocket_ic::{build_client, deploy_canister, ADMIN};
@@ -110,7 +114,7 @@ async fn test_only_admin_can_manage_permissions() {
     // Arrange
     let (pocket, canister_principal) = deploy_canister(None).await;
     let caller_principal = Principal::from_slice(&[1u8; 29]);
-    let client = build_client(pocket, canister_principal, caller_principal);
+    let client = build_client(pocket.clone(), canister_principal, caller_principal);
 
     // Act & Assert
     assert!(client
@@ -118,16 +122,31 @@ async fn test_only_admin_can_manage_permissions() {
         .await
         .unwrap()
         .is_err());
-    assert!(client
+    
+    assert_inspect_message_error(&client
         .admin_permissions_add(caller_principal, &[Permission::CreateProject])
-        .await
-        .unwrap()
-        .is_err());
-    assert!(client
+        .await);
+    assert_inspect_message_error(&client
         .admin_permissions_remove(caller_principal, &[Permission::CreateProject])
-        .await
-        .unwrap()
-        .is_err());
+        .await);
+
+    // Permission check should fail even if the inspect message is disabled
+    {
+        disable_inspect_message(pocket, canister_principal).await;
+
+        // Act & Assert
+        assert!(client
+            .admin_permissions_add(caller_principal, &[Permission::CreateProject])
+            .await
+            .unwrap()
+            .is_err());
+        assert!(client
+            .admin_permissions_remove(caller_principal, &[Permission::CreateProject])
+            .await
+            .unwrap()
+            .is_err());
+
+    }
 }
 
 /// Test that the admin can disable/enable the inspect message
@@ -158,15 +177,25 @@ async fn test_only_admin_can_disable_inspect_message() {
     // Arrange
     let (pocket, canister_principal) = deploy_canister(None).await;
     let caller_principal = Principal::from_slice(&[1u8; 29]);
-    let client = build_client(pocket, canister_principal, caller_principal);
+    let client = build_client(pocket.clone(), canister_principal, caller_principal);
 
     // Act & Assert
-    assert!(client.is_inspect_message_disabled().await.unwrap());
-    assert!(client
+    assert_inspect_message_error(&client
         .admin_disable_inspect_message(true)
-        .await
-        .unwrap()
-        .is_err());
+        .await);
+    
+    // Permission check should fail even if the inspect message is disabled
+    {
+        disable_inspect_message(pocket, canister_principal).await;
+        
+        // Act & Assert
+        assert!(client
+            .admin_disable_inspect_message(false)
+            .await
+            .unwrap()
+            .is_err());
+    }
+
 }
 
 /// Test that the caller can get their own permissions
@@ -257,13 +286,25 @@ async fn test_caller_cant_create_projects_if_not_allowed() {
         name: "Project".to_string(),
         description: "Description".to_string(),
     };
-    let result = user_1_client.project_create(&project).await.unwrap();
+    assert_inspect_message_error(&user_1_client.project_create(&project).await);
+    
+
+    // Permission check should fail even if the inspect message is disabled
+    {
+        disable_inspect_message(pocket, canister_principal).await;
+
+        // Act
+        assert!(user_1_client
+            .project_create(&project)
+            .await
+            .unwrap()
+            .is_err());
+    }
 
     // Assert
-    assert!(result.is_err());
-
     let projects = user_1_client.project_get_all().await.unwrap();
     assert!(projects.is_empty());
+
 }
 
 /// Test that the caller can create and get polls
@@ -330,11 +371,21 @@ async fn test_caller_cant_create_polls_if_not_allowed() {
         start_timestamp_secs: 0,
         end_timestamp_secs: 1,
     };
-    let result = user_1_client.poll_create(&poll).await.unwrap();
+    assert_inspect_message_error(&user_1_client.poll_create(&poll).await);
+
+    // Permission check should fail even if the inspect message is disabled
+    {
+        disable_inspect_message(pocket, canister_principal).await;
+
+        // Act
+        assert!(user_1_client
+            .poll_create(&poll)
+            .await
+            .unwrap()
+            .is_err());
+    }
 
     // Assert
-    assert!(result.is_err());
-
     let polls = user_1_client.poll_get_all().await.unwrap();
     assert!(polls.is_empty());
 }
@@ -428,12 +479,38 @@ async fn test_caller_cant_vote_in_poll_if_not_allowed() {
     let poll_id = user_1_client.poll_create(&poll).await.unwrap().unwrap();
 
     // Act
-    let result = user_2_client.poll_vote(poll_id, true).await.unwrap();
+    assert_inspect_message_error(&user_2_client.poll_vote(poll_id, true).await);
+
+        // Permission check should fail even if the inspect message is disabled
+        {
+            disable_inspect_message(pocket, canister_principal).await;
+    
+            // Act
+            assert!(user_2_client
+                .poll_vote(poll_id, true)
+                .await
+                .unwrap()
+                .is_err());
+        }
 
     // Assert
-    assert!(result.is_err());
-
     let poll = user_1_client.poll_get(poll_id).await.unwrap().unwrap();
     assert!(poll.yes_voters.is_empty());
     assert!(poll.no_voters.is_empty());
+
+}
+
+fn assert_inspect_message_error<T: std::fmt::Debug>(result: &CanisterClientResult<T>) {
+    assert!(result.is_err());
+    let error = result.as_ref().unwrap_err();
+    assert!(error.to_string().contains("Call rejected by inspect check"));
+}
+
+async fn disable_inspect_message(pocket: Arc<PocketIc>, canister_principal: Principal) {
+    let admin_client = build_client(pocket, canister_principal, ADMIN);
+    admin_client
+        .admin_disable_inspect_message(true)
+        .await
+        .unwrap()
+        .unwrap();
 }
