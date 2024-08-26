@@ -4,14 +4,26 @@ version.workspace = true
 edition.workspace = true
 
 [dependencies]
+candid = { workspace = true }
 ic-canister = { workspace = true }
 ic-exports = { workspace = true }
-ic-helpers = { workspace = true }
 ic-log = { workspace = true }
-ic-canister-client = { workspace = true }
 ic-storage = { workspace = true }
 ic-stable-structures = { workspace = true }
+log = { workspace = true }
+upgrader_canister_did = { workspace = true }
+
+[dev-dependencies]
+ic-canister-client = { workspace = true, features = ["pocket-ic-client"] }
+ic-exports = { workspace = true, features = ["pocket-ic-tests"]}
+rand = { workspace = true }
+tokio = { workspace = true }
+upgrader_canister_client = { workspace = true }
 
 [build-dependencies]
 anyhow = { workspace = true }
 vergen-gitcl = { workspace = true }
+
+[features]
+default = []
+export-api = []

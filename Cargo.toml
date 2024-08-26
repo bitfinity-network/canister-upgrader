@@ -1,5 +1,6 @@
 [workspace]
-members = [
+members = [ 
+    "src/did",
     "src/upgrader_canister",
     "src/upgrader_canister_client",
 ]
@@ -10,7 +11,12 @@ version = "0.1.0"
 edition = "2021"
 
 [workspace.dependencies]
+upgrader_canister = { path = "src/upgrader_canister" }
+upgrader_canister_client = { path = "src/upgrader_canister_client" }
+upgrader_canister_did = { path = "src/did" }
+
 anyhow = "1.0"
+candid = "0.10"
 ic-canister = { git = "https://github.com/bitfinity-network/canister-sdk", package = "ic-canister", tag = "v0.20.x" }
 ic-exports = { git = "https://github.com/bitfinity-network/canister-sdk", package = "ic-exports", tag = "v0.20.x" }
 ic-helpers = { git = "https://github.com/bitfinity-network/canister-sdk", package = "ic-helpers", tag = "v0.20.x" }
@@ -19,8 +25,29 @@ ic-canister-client = { git = "https://github.com/bitfinity-network/canister-sdk"
 ic-storage = { git = "https://github.com/bitfinity-network/canister-sdk", package = "ic-storage", tag = "v0.20.x" }
 ic-stable-structures = { git = "https://github.com/bitfinity-network/canister-sdk", package = "ic-stable-structures", tag = "v0.20.x" }
 ic-test-utils = { git = "https://github.com/bitfinity-network/canister-sdk", package = "ic-test-utils", tag = "v0.20.x" }
+log = "0.4"
+rand = { version = "0.8", features = ["std_rng", "small_rng"] }
+serde = "1.0"
+serde_json = "1.0"
+thiserror = "1.0"
+tokio = { version = "1.24", features = ["macros", "rt", "signal"] }
 vergen-gitcl = { version = "1", default-features = false, features = [
     "build",
     "cargo",
     "rustc",
 ] }
+
+# Set the settings for all dependencies (but not this crate itself or any workspace member).
+# This includes build dependencies.
+# Level range is from 0 (default for dev) to 3 (default for release)
+[profile.dev.package."*"]
+opt-level = 2
+
+# Set the settings for build scripts and proc-macros.
+[profile.dev.build-override]
+opt-level = 2
+
+[profile.release]
+#opt-level = "z"
+lto = true
+codegen-units = 1
