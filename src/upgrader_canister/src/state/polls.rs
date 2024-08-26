@@ -8,9 +8,10 @@ use ic_stable_structures::{
 use upgrader_canister_did::error::{Result, UpgraderError};
 use upgrader_canister_did::{Poll, PollCreateData};
 
-use crate::constant::{POLLS_CLOSED_MAP_MEMORY_ID, POLLS_ID_SEQUENCE_MEMORY_ID, POLLS_PENDING_MAP_MEMORY_ID};
-
 use super::permission::Permissions;
+use crate::constant::{
+    POLLS_CLOSED_MAP_MEMORY_ID, POLLS_ID_SEQUENCE_MEMORY_ID, POLLS_PENDING_MAP_MEMORY_ID,
+};
 
 /// Manages polls
 pub struct Polls<M: Memory> {
@@ -24,7 +25,6 @@ pub struct Polls<M: Memory> {
 }
 
 impl<M: Memory> Polls<M> {
-
     pub fn new(memory_manager: &dyn MemoryManager<M, u8>) -> Self {
         Self {
             pending_polls: StableBTreeMap::new(memory_manager.get(POLLS_PENDING_MAP_MEMORY_ID)),
@@ -46,7 +46,9 @@ impl<M: Memory> Polls<M> {
 
     /// Returns the poll data for the given key
     pub fn get(&self, id: &u64) -> Option<Poll> {
-        self.pending_polls.get(id).or_else(|| self.closed_polls.get(id))
+        self.pending_polls
+            .get(id)
+            .or_else(|| self.closed_polls.get(id))
     }
 
     /// Returns all polls
@@ -100,8 +102,11 @@ impl<M: Memory> Polls<M> {
     }
 
     /// Finalizes the poll and moves it to the closed polls
-    pub fn finalize_polls(&mut self, timestamp_secs: u64, permissions_service: &mut Permissions<M>) -> Result<()> {
-        
+    pub fn finalize_polls(
+        &mut self,
+        timestamp_secs: u64,
+        permissions_service: &mut Permissions<M>,
+    ) -> Result<()> {
         // loop through all the pending polls and find the closed ones
         let mut polls_to_close = Vec::new();
         for (id, poll) in self.pending_polls.iter() {
@@ -121,16 +126,25 @@ impl<M: Memory> Polls<M> {
     }
 
     /// Process a pool before it is finalized
-    pub fn process_poll(&mut self, poll: &Poll, permissions_service: &mut Permissions<M>) -> Result<()> {
-
+    pub fn process_poll(
+        &mut self,
+        poll: &Poll,
+        permissions_service: &mut Permissions<M>,
+    ) -> Result<()> {
         if poll.yes_voters.len() > poll.no_voters.len() {
             match &poll.poll_type {
-                upgrader_canister_did::PollType::AddPermission { principals, permissions } => {
+                upgrader_canister_did::PollType::AddPermission {
+                    principals,
+                    permissions,
+                } => {
                     for principal in principals {
                         permissions_service.add_permissions(*principal, permissions.clone())?;
                     }
                 }
-                upgrader_canister_did::PollType::RemovePermission { principals, permissions } => {
+                upgrader_canister_did::PollType::RemovePermission {
+                    principals,
+                    permissions,
+                } => {
                     for principal in principals {
                         permissions_service.remove_permissions(*principal, permissions)?;
                     }
@@ -140,7 +154,6 @@ impl<M: Memory> Polls<M> {
         }
         Ok(())
     }
-    
 
     /// Returns the next poll id
     fn next_id(&mut self) -> u64 {
@@ -395,47 +408,47 @@ mod test {
         );
     }
 
-        /// Should not had the permissions if the poll is not approved
-        #[test]
-        fn test_process_poll_not_add_permission() {
-            // Arrange
-            let memory_manager = ic_stable_structures::default_ic_memory_manager();
-            let mut polls = super::Polls::new(&memory_manager);
-            let mut permissions = super::Permissions::new(&memory_manager);
-    
-            let principal_1 = Principal::from_slice(&[1, 29]);
-            let principal_2 = Principal::from_slice(&[2, 29]);
-            let principal_3 = Principal::from_slice(&[3, 29]);
-    
-            let poll = upgrader_canister_did::Poll {
-                description: "poll_0".to_string(),
-                poll_type: PollType::AddPermission {
-                    principals: vec![principal_1, principal_2],
-                    permissions: vec![Permission::Admin],
-                },
-                start_timestamp_secs: 0,
-                end_timestamp_secs: 234567,
-                yes_voters: vec![],
-                no_voters: vec![principal_3],
-            };
-    
-            // Act
-            polls.process_poll(&poll, &mut permissions).unwrap();
-    
-            // Assert
-            assert_eq!(
-                permissions.get_permissions(&principal_1).permissions,
-                HashSet::new()
-            );
-            assert_eq!(
-                permissions.get_permissions(&principal_2).permissions,
-                HashSet::new()
-            );
-            assert_eq!(
-                permissions.get_permissions(&principal_3).permissions,
-                HashSet::new()
-            );
-        }
+    /// Should not had the permissions if the poll is not approved
+    #[test]
+    fn test_process_poll_not_add_permission() {
+        // Arrange
+        let memory_manager = ic_stable_structures::default_ic_memory_manager();
+        let mut polls = super::Polls::new(&memory_manager);
+        let mut permissions = super::Permissions::new(&memory_manager);
+
+        let principal_1 = Principal::from_slice(&[1, 29]);
+        let principal_2 = Principal::from_slice(&[2, 29]);
+        let principal_3 = Principal::from_slice(&[3, 29]);
+
+        let poll = upgrader_canister_did::Poll {
+            description: "poll_0".to_string(),
+            poll_type: PollType::AddPermission {
+                principals: vec![principal_1, principal_2],
+                permissions: vec![Permission::Admin],
+            },
+            start_timestamp_secs: 0,
+            end_timestamp_secs: 234567,
+            yes_voters: vec![],
+            no_voters: vec![principal_3],
+        };
+
+        // Act
+        polls.process_poll(&poll, &mut permissions).unwrap();
+
+        // Assert
+        assert_eq!(
+            permissions.get_permissions(&principal_1).permissions,
+            HashSet::new()
+        );
+        assert_eq!(
+            permissions.get_permissions(&principal_2).permissions,
+            HashSet::new()
+        );
+        assert_eq!(
+            permissions.get_permissions(&principal_3).permissions,
+            HashSet::new()
+        );
+    }
 
     /// should remove the permissions if the poll approved
     #[test]
@@ -449,9 +462,29 @@ mod test {
         let principal_2 = Principal::from_slice(&[2, 29]);
         let principal_3 = Principal::from_slice(&[3, 29]);
 
-        permissions.add_permissions(principal_1, vec![Permission::Admin, Permission::CreatePoll, Permission::CreateProject]).unwrap();
-        permissions.add_permissions(principal_2, vec![Permission::Admin]).unwrap();
-        permissions.add_permissions(principal_3, vec![Permission::Admin, Permission::CreatePoll, Permission::CreateProject]).unwrap();
+        permissions
+            .add_permissions(
+                principal_1,
+                vec![
+                    Permission::Admin,
+                    Permission::CreatePoll,
+                    Permission::CreateProject,
+                ],
+            )
+            .unwrap();
+        permissions
+            .add_permissions(principal_2, vec![Permission::Admin])
+            .unwrap();
+        permissions
+            .add_permissions(
+                principal_3,
+                vec![
+                    Permission::Admin,
+                    Permission::CreatePoll,
+                    Permission::CreateProject,
+                ],
+            )
+            .unwrap();
 
         let poll = upgrader_canister_did::Poll {
             description: "poll_0".to_string(),
@@ -479,56 +512,87 @@ mod test {
         );
         assert_eq!(
             permissions.get_permissions(&principal_3).permissions,
-            HashSet::from([Permission::Admin, Permission::CreatePoll, Permission::CreateProject])
+            HashSet::from([
+                Permission::Admin,
+                Permission::CreatePoll,
+                Permission::CreateProject
+            ])
         );
     }
 
-        /// should not remove the permissions if the poll not approved
-        #[test]
-        fn test_process_poll_not_remove_permission() {
-            // Arrange
-            let memory_manager = ic_stable_structures::default_ic_memory_manager();
-            let mut polls = super::Polls::new(&memory_manager);
-            let mut permissions = super::Permissions::new(&memory_manager);
-    
-            let principal_1 = Principal::from_slice(&[1, 29]);
-            let principal_2 = Principal::from_slice(&[2, 29]);
-            let principal_3 = Principal::from_slice(&[3, 29]);
-    
-            permissions.add_permissions(principal_1, vec![Permission::Admin, Permission::CreatePoll, Permission::CreateProject]).unwrap();
-            permissions.add_permissions(principal_2, vec![Permission::Admin]).unwrap();
-            permissions.add_permissions(principal_3, vec![Permission::Admin, Permission::CreatePoll, Permission::CreateProject]).unwrap();
-    
-            let poll = upgrader_canister_did::Poll {
-                description: "poll_0".to_string(),
-                poll_type: PollType::RemovePermission {
-                    principals: vec![principal_1, principal_2],
-                    permissions: vec![Permission::Admin, Permission::CreateProject],
-                },
-                start_timestamp_secs: 0,
-                end_timestamp_secs: 234567,
-                yes_voters: vec![principal_3],
-                no_voters: vec![principal_1, principal_2],
-            };
-    
-            // Act
-            polls.process_poll(&poll, &mut permissions).unwrap();
-    
-            // Assert
-            assert_eq!(
-                permissions.get_permissions(&principal_1).permissions,
-                HashSet::from([Permission::Admin, Permission::CreatePoll, Permission::CreateProject])
-            );
-            assert_eq!(
-                permissions.get_permissions(&principal_2).permissions,
-                HashSet::from([Permission::Admin])
-            );
-            assert_eq!(
-                permissions.get_permissions(&principal_3).permissions,
-                HashSet::from([Permission::Admin, Permission::CreatePoll, Permission::CreateProject])
-            );
-        }
+    /// should not remove the permissions if the poll not approved
+    #[test]
+    fn test_process_poll_not_remove_permission() {
+        // Arrange
+        let memory_manager = ic_stable_structures::default_ic_memory_manager();
+        let mut polls = super::Polls::new(&memory_manager);
+        let mut permissions = super::Permissions::new(&memory_manager);
 
+        let principal_1 = Principal::from_slice(&[1, 29]);
+        let principal_2 = Principal::from_slice(&[2, 29]);
+        let principal_3 = Principal::from_slice(&[3, 29]);
+
+        permissions
+            .add_permissions(
+                principal_1,
+                vec![
+                    Permission::Admin,
+                    Permission::CreatePoll,
+                    Permission::CreateProject,
+                ],
+            )
+            .unwrap();
+        permissions
+            .add_permissions(principal_2, vec![Permission::Admin])
+            .unwrap();
+        permissions
+            .add_permissions(
+                principal_3,
+                vec![
+                    Permission::Admin,
+                    Permission::CreatePoll,
+                    Permission::CreateProject,
+                ],
+            )
+            .unwrap();
+
+        let poll = upgrader_canister_did::Poll {
+            description: "poll_0".to_string(),
+            poll_type: PollType::RemovePermission {
+                principals: vec![principal_1, principal_2],
+                permissions: vec![Permission::Admin, Permission::CreateProject],
+            },
+            start_timestamp_secs: 0,
+            end_timestamp_secs: 234567,
+            yes_voters: vec![principal_3],
+            no_voters: vec![principal_1, principal_2],
+        };
+
+        // Act
+        polls.process_poll(&poll, &mut permissions).unwrap();
+
+        // Assert
+        assert_eq!(
+            permissions.get_permissions(&principal_1).permissions,
+            HashSet::from([
+                Permission::Admin,
+                Permission::CreatePoll,
+                Permission::CreateProject
+            ])
+        );
+        assert_eq!(
+            permissions.get_permissions(&principal_2).permissions,
+            HashSet::from([Permission::Admin])
+        );
+        assert_eq!(
+            permissions.get_permissions(&principal_3).permissions,
+            HashSet::from([
+                Permission::Admin,
+                Permission::CreatePoll,
+                Permission::CreateProject
+            ])
+        );
+    }
 
     /// Should finalize the polls and move them to closed polls
     #[test]
@@ -603,5 +667,4 @@ mod test {
             HashSet::from([Permission::Admin])
         );
     }
-
 }
