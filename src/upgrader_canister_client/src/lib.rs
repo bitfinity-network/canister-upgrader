@@ -3,7 +3,9 @@ use std::collections::BTreeMap;
 use candid::Principal;
 use ic_canister_client::{CanisterClient, CanisterClientResult};
 use upgrader_canister_did::error::Result;
-use upgrader_canister_did::{BuildData, Permission, PermissionList, Poll, ProjectData};
+use upgrader_canister_did::{
+    BuildData, Permission, PermissionList, Poll, PollCreateData, ProjectData,
+};
 
 /// An upgrader canister client.
 #[derive(Debug, Clone)]
@@ -61,6 +63,21 @@ impl<C: CanisterClient> UpgraderCanisterClient<C> {
             .await
     }
 
+    /// Disable/Enable the inspect message
+    pub async fn admin_disable_inspect_message(
+        &self,
+        value: bool,
+    ) -> CanisterClientResult<Result<()>> {
+        self.client
+            .update("admin_disable_inspect_message", (value,))
+            .await
+    }
+
+    /// Returns whether the inspect message is disabled.
+    pub async fn is_inspect_message_disabled(&self) -> CanisterClientResult<bool> {
+        self.client.query("is_inspect_message_disabled", ()).await
+    }
+
     /// Returns the permissions of the caller
     pub async fn caller_permissions_get(&self) -> CanisterClientResult<Result<PermissionList>> {
         self.client.query("caller_permissions_get", ()).await
@@ -92,7 +109,7 @@ impl<C: CanisterClient> UpgraderCanisterClient<C> {
     }
 
     /// Creates a new poll and returns the generated poll id
-    pub async fn poll_create(&self, poll: &Poll) -> CanisterClientResult<Result<u64>> {
+    pub async fn poll_create(&self, poll: &PollCreateData) -> CanisterClientResult<Result<u64>> {
         self.client.update("poll_create", (poll,)).await
     }
 

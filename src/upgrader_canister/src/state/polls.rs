@@ -6,7 +6,7 @@ use ic_stable_structures::{
     BTreeMapStructure, CellStructure, MemoryManager, StableBTreeMap, StableCell,
 };
 use upgrader_canister_did::error::{Result, UpgraderError};
-use upgrader_canister_did::Poll;
+use upgrader_canister_did::{Poll, PollCreateData};
 
 use crate::constant::{POLLS_ID_SEQUENCE_MEMORY_ID, POLLS_MAP_MEMORY_ID};
 
@@ -36,9 +36,9 @@ impl<M: Memory> Polls<M> {
     }
 
     /// Inserts a new poll and returns the generated key
-    pub fn insert(&mut self, poll: Poll) -> u64 {
+    pub fn insert(&mut self, poll: PollCreateData) -> u64 {
         let id = self.next_id();
-        self.polls.insert(id, poll);
+        self.polls.insert(id, poll.into());
         id
     }
 
@@ -115,10 +115,8 @@ mod test {
         let mut polls = super::Polls::new(&memory_manager);
 
         // Act
-        let poll_0_id = polls.insert(upgrader_canister_did::Poll {
+        let poll_0_id = polls.insert(upgrader_canister_did::PollCreateData {
             description: "poll_0".to_string(),
-            yes_voters: vec![],
-            no_voters: vec![],
             poll_type: PollType::ProjectHash {
                 project: "project".to_owned(),
                 hash: "hash".to_owned(),
@@ -127,10 +125,8 @@ mod test {
             end_timestamp_secs: 234567,
         });
 
-        let poll_1_id = polls.insert(upgrader_canister_did::Poll {
+        let poll_1_id = polls.insert(upgrader_canister_did::PollCreateData {
             description: "poll_1".to_string(),
-            yes_voters: vec![],
-            no_voters: vec![],
             poll_type: PollType::ProjectHash {
                 project: "project".to_owned(),
                 hash: "hash".to_owned(),
@@ -165,10 +161,8 @@ mod test {
         // Arrange
         let memory_manager = ic_stable_structures::default_ic_memory_manager();
         let mut polls = super::Polls::new(&memory_manager);
-        let poll_id = polls.insert(upgrader_canister_did::Poll {
+        let poll_id = polls.insert(upgrader_canister_did::PollCreateData {
             description: "poll_0".to_string(),
-            yes_voters: vec![],
-            no_voters: vec![],
             poll_type: PollType::ProjectHash {
                 project: "project".to_owned(),
                 hash: "hash".to_owned(),
@@ -202,10 +196,8 @@ mod test {
         // Arrange
         let memory_manager = ic_stable_structures::default_ic_memory_manager();
         let mut polls = super::Polls::new(&memory_manager);
-        let poll_id = polls.insert(upgrader_canister_did::Poll {
+        let poll_id = polls.insert(upgrader_canister_did::PollCreateData {
             description: "poll_0".to_string(),
-            yes_voters: vec![],
-            no_voters: vec![],
             poll_type: PollType::ProjectHash {
                 project: "project".to_owned(),
                 hash: "hash".to_owned(),
@@ -247,10 +239,8 @@ mod test {
 
         let end_ts = 100;
 
-        let poll_id = polls.insert(upgrader_canister_did::Poll {
+        let poll_id = polls.insert(upgrader_canister_did::PollCreateData {
             description: "poll_0".to_string(),
-            yes_voters: vec![],
-            no_voters: vec![],
             poll_type: PollType::ProjectHash {
                 project: "project".to_owned(),
                 hash: "hash".to_owned(),
@@ -278,10 +268,8 @@ mod test {
 
         let start_ts = 100;
 
-        let poll_id = polls.insert(upgrader_canister_did::Poll {
+        let poll_id = polls.insert(upgrader_canister_did::PollCreateData {
             description: "poll_0".to_string(),
-            yes_voters: vec![],
-            no_voters: vec![],
             poll_type: PollType::ProjectHash {
                 project: "project".to_owned(),
                 hash: "hash".to_owned(),

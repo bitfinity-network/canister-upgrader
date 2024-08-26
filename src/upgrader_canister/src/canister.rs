@@ -3,12 +3,15 @@ use std::collections::BTreeMap;
 use candid::Principal;
 use ic_canister::{init, post_upgrade, query, update, Canister, MethodType, PreUpdate};
 use ic_exports::ic_kit::ic;
+use ic_stable_structures::stable_structures::Memory;
 use upgrader_canister_did::error::Result;
 use upgrader_canister_did::{
-    BuildData, Permission, PermissionList, Poll, ProjectData, UpgraderCanisterInitData,
+    BuildData, Permission, PermissionList, Poll, PollCreateData, PollType, ProjectData,
+    UpgraderCanisterInitData, UpgraderError,
 };
 
 use crate::build_data::canister_build_data;
+use crate::state::permission::Permissions;
 use crate::state::UpgraderCanisterState;
 
 thread_local! {
@@ -87,6 +90,22 @@ impl UpgraderCanister {
         })
     }
 
+    /// Disable/Enable the inspect message
+    #[update]
+    pub fn admin_disable_inspect_message(&mut self, value: bool) -> Result<()> {
+        STATE.with(|state| {
+            state.permissions.borrow().check_admin(&ic::caller())?;
+            state.settings.borrow_mut().disable_inspect_message(value);
+            Ok(())
+        })
+    }
+
+    /// Returns whether the inspect message is disabled.
+    #[query]
+    pub fn is_inspect_message_disabled(&self) -> bool {
+        STATE.with(|state| state.settings.borrow().is_inspect_message_disabled())
+    }
+
     /// Returns the permissions of the caller
     #[query]
     pub fn caller_permissions_get(&self) -> Result<PermissionList> {
@@ -108,14 +127,19 @@ impl UpgraderCanister {
         STATE.with(|state| state.projects.borrow().get(&key))
     }
 
+    /// Inspects permissions for the project_create method
+    pub fn project_create_inspect<M: Memory>(
+        permissions: &Permissions<M>,
+        caller: &Principal,
+    ) -> Result<()> {
+        permissions.check_has_all_permissions(caller, &[Permission::CreateProject])
+    }
+
     /// Creates a new project
     #[update]
     pub fn project_create(&mut self, project: ProjectData) -> Result<()> {
         STATE.with(|state| {
-            state
-                .permissions
-                .borrow()
-                .check_has_all_permissions(&ic::caller(), &[Permission::CreateProject])?;
+            Self::project_create_inspect(&state.permissions.borrow(), &ic::caller())?;
             state.projects.borrow_mut().insert(project)
         })
     }
@@ -132,16 +156,39 @@ impl UpgraderCanister {
         STATE.with(|state| state.polls.borrow().get(&id))
     }
 
+    /// Inspects permissions for the poll_create method
+    pub fn poll_create_inspect<M: Memory>(
+        permissions: &Permissions<M>,
+        caller: &Principal,
+    ) -> Result<()> {
+        permissions.check_has_all_permissions(caller, &[Permission::CreatePoll])
+    }
+
     /// Creates a new poll and returns the generated poll id
     #[update]
-    pub fn poll_create(&mut self, poll: Poll) -> Result<u64> {
+    pub fn poll_create(&mut self, poll: PollCreateData) -> Result<u64> {
         STATE.with(|state| {
-            state
-                .permissions
-                .borrow()
-                .check_has_all_permissions(&ic::caller(), &[Permission::CreatePoll])?;
+            Self::poll_create_inspect(&state.permissions.borrow(), &ic::caller())?;
+
+            if let PollType::ProjectHash { project, hash: _ } = &poll.poll_type {
+                state.projects.borrow().get(project).ok_or_else(|| {
+                    UpgraderError::BadRequest(format!(
+                        "Cannot create poll, project [{}] does not exist",
+                        project
+                    ))
+                })?;
+            }
+
             Ok(state.polls.borrow_mut().insert(poll))
         })
+    }
+
+    /// Inspects permissions for the poll_vote method
+    pub fn poll_vote_inspect<M: Memory>(
+        permissions: &Permissions<M>,
+        caller: &Principal,
+    ) -> Result<()> {
+        permissions.check_has_all_permissions(caller, &[Permission::VotePoll])
     }
 
     /// Votes for a poll. If the voter has already voted, the previous vote is replaced.
@@ -149,10 +196,7 @@ impl UpgraderCanister {
     pub fn poll_vote(&mut self, poll_id: u64, approved: bool) -> Result<()> {
         STATE.with(|state| {
             let caller = ic::caller();
-            state
-                .permissions
-                .borrow()
-                .check_has_all_permissions(&caller, &[Permission::VotePoll])?;
+            Self::poll_vote_inspect(&state.permissions.borrow(), &caller)?;
             state
                 .polls
                 .borrow_mut()
