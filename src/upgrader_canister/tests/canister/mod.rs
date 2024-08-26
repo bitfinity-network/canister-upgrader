@@ -3,6 +3,7 @@ use std::sync::Arc;
 use candid::Principal;
 use ic_canister_client::CanisterClientResult;
 use ic_exports::pocket_ic::PocketIc;
+use upgrader_canister::constant::POLL_TIMER_INTERVAL;
 use upgrader_canister_did::{Permission, PollCreateData, PollType, ProjectData};
 
 use crate::pocket_ic::{build_client, deploy_canister, ADMIN};
@@ -528,6 +529,50 @@ async fn test_caller_cant_vote_in_poll_if_not_allowed() {
     let poll = user_1_client.poll_get(poll_id).await.unwrap().unwrap();
     assert!(poll.yes_voters.is_empty());
     assert!(poll.no_voters.is_empty());
+}
+
+/// Test that the poll timer runs
+#[tokio::test]
+async fn test_poll_timer() {
+    // Arrange
+    let (pocket, canister_principal) = deploy_canister(None).await;
+    let admin_principal = ADMIN;
+    let admin_client = build_client(pocket.clone(), canister_principal, admin_principal);
+
+    let project_key = "project-10";
+    create_project(pocket.clone(), canister_principal, project_key).await;
+
+    admin_client
+        .admin_permissions_add(
+            admin_principal,
+            &[Permission::CreatePoll, Permission::VotePoll],
+        )
+        .await
+        .unwrap()
+        .unwrap();
+
+    let poll = PollCreateData {
+        description: "Description".to_string(),
+        poll_type: PollType::ProjectHash {
+            project: project_key.to_string(),
+            hash: "hash".to_string(),
+        },
+        start_timestamp_secs: 0,
+        end_timestamp_secs: 1,
+    };
+    let poll_id = admin_client.poll_create(&poll).await.unwrap().unwrap();
+
+    // Act
+    pocket.advance_time(POLL_TIMER_INTERVAL * 2).await;
+    pocket.tick().await;
+
+    // Assert
+    let poll = admin_client
+        .poll_get_closed(poll_id)
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(poll.end_timestamp_secs, 1);
 }
 
 fn assert_inspect_message_error<T: std::fmt::Debug>(result: &CanisterClientResult<T>) {

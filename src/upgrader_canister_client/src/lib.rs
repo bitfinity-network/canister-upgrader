@@ -108,6 +108,16 @@ impl<C: CanisterClient> UpgraderCanisterClient<C> {
         self.client.query("poll_get", (id,)).await
     }
 
+    /// Returns a poll by id searching in the pending polls
+    pub async fn poll_get_pending(&self, id: u64) -> CanisterClientResult<Option<Poll>> {
+        self.client.query("poll_get_pending", (id,)).await
+    }
+
+    /// Returns a poll by id searching in the closed polls
+    pub async fn poll_get_closed(&self, id: u64) -> CanisterClientResult<Option<Poll>> {
+        self.client.query("poll_get_closed", (id,)).await
+    }
+
     /// Creates a new poll and returns the generated poll id
     pub async fn poll_create(&self, poll: &PollCreateData) -> CanisterClientResult<Result<u64>> {
         self.client.update("poll_create", (poll,)).await
