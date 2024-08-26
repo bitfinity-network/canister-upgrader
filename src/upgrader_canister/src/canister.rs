@@ -83,10 +83,10 @@ impl UpgraderCanister {
     ) -> Result<PermissionList> {
         STATE.with(|state| {
             state.permissions.borrow().check_admin(&ic::caller())?;
-            Ok(state
+            state
                 .permissions
                 .borrow_mut()
-                .remove_permissions(principal, &permissions))
+                .remove_permissions(principal, &permissions)
         })
     }
 
