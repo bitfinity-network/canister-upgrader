@@ -4,7 +4,7 @@ use candid::Principal;
 use ic_canister_client::CanisterClientResult;
 use ic_exports::pocket_ic::PocketIc;
 use upgrader_canister::constant::POLL_TIMER_INTERVAL;
-use upgrader_canister_did::{Permission, PollCreateData, PollType, ProjectData};
+use upgrader_canister_did::{Permission, PollCreateData, PollResult, PollType, ProjectData};
 
 use crate::pocket_ic::{build_client, deploy_canister, ADMIN};
 
@@ -573,6 +573,8 @@ async fn test_poll_timer() {
         .unwrap()
         .unwrap();
     assert_eq!(poll.end_timestamp_secs, 1);
+    assert_eq!(poll.result, PollResult::Rejected);
+
 }
 
 fn assert_inspect_message_error<T: std::fmt::Debug>(result: &CanisterClientResult<T>) {

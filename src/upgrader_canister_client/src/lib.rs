@@ -119,7 +119,7 @@ impl<C: CanisterClient> UpgraderCanisterClient<C> {
     }
 
     /// Returns a poll by id searching in the closed polls
-    pub async fn poll_get_closed(&self, id: u64) -> CanisterClientResult<Option<PendingPoll>> {
+    pub async fn poll_get_closed(&self, id: u64) -> CanisterClientResult<Option<ClosedPoll>> {
         self.client.query("poll_get_closed", (id,)).await
     }
 
