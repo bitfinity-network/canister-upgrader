@@ -48,8 +48,8 @@ impl<M: Memory> Polls<M> {
     pub fn get(&self, id: &u64) -> Option<Poll> {
         self.pending_polls
             .get(id)
-            .map(|x| Poll::Pending(x))
-            .or_else(|| self.closed_polls.get(id).map(|x| Poll::Closed(x)))
+            .map(Poll::Pending)
+            .or_else(|| self.closed_polls.get(id).map(Poll::Closed))
     }
 
     /// Returns all pending polls
