@@ -7,7 +7,8 @@ use ic_stable_structures::stable_structures::Memory;
 use log::info;
 use upgrader_canister_did::error::Result;
 use upgrader_canister_did::{
-    BuildData, ClosedPoll, PendingPoll, Permission, PermissionList, Poll, PollCreateData, PollType, ProjectData, UpgraderCanisterInitData, UpgraderError
+    BuildData, ClosedPoll, PendingPoll, Permission, PermissionList, Poll, PollCreateData, PollType,
+    ProjectData, UpgraderCanisterInitData, UpgraderError,
 };
 
 use crate::build_data::canister_build_data;

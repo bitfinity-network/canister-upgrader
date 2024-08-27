@@ -346,7 +346,11 @@ async fn test_caller_can_create_and_get_polls() {
     assert_eq!(polls.len(), 1);
     assert_eq!(polls[&poll_id], poll.clone().into());
 
-    let poll_from_get = user_2_client.poll_get_pending(poll_id).await.unwrap().unwrap();
+    let poll_from_get = user_2_client
+        .poll_get_pending(poll_id)
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(poll_from_get, poll.into());
 }
 
@@ -472,7 +476,11 @@ async fn test_caller_can_vote_in_poll() {
         .unwrap();
 
     // Assert
-    let poll = user_1_client.poll_get_pending(poll_id).await.unwrap().unwrap();
+    let poll = user_1_client
+        .poll_get_pending(poll_id)
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(poll.yes_voters.len(), 1);
     assert!(poll.yes_voters.contains(&user_2_principal));
     assert_eq!(poll.no_voters.len(), 1);
@@ -526,7 +534,11 @@ async fn test_caller_cant_vote_in_poll_if_not_allowed() {
     }
 
     // Assert
-    let poll = user_1_client.poll_get_pending(poll_id).await.unwrap().unwrap();
+    let poll = user_1_client
+        .poll_get_pending(poll_id)
+        .await
+        .unwrap()
+        .unwrap();
     assert!(poll.yes_voters.is_empty());
     assert!(poll.no_voters.is_empty());
 }
@@ -574,7 +586,6 @@ async fn test_poll_timer() {
         .unwrap();
     assert_eq!(poll.end_timestamp_secs, 1);
     assert_eq!(poll.result, PollResult::Rejected);
-
 }
 
 fn assert_inspect_message_error<T: std::fmt::Debug>(result: &CanisterClientResult<T>) {

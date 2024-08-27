@@ -31,9 +31,7 @@ pub struct UpgraderCanisterInitData {
 }
 
 /// Principal specific permission
-#[derive(
-    Debug, Clone, CandidType, Deserialize, Hash, PartialEq, Eq, serde::Serialize,
-)]
+#[derive(Debug, Clone, CandidType, Deserialize, Hash, PartialEq, Eq, serde::Serialize)]
 pub enum Permission {
     /// Gives administrator permissions
     Admin,
@@ -63,9 +61,7 @@ impl Storable for PermissionList {
 }
 
 /// Contains the project data.
-#[derive(
-    Debug, Clone, CandidType, Deserialize, PartialEq, Eq, serde::Serialize,
-)]
+#[derive(Debug, Clone, CandidType, Deserialize, PartialEq, Eq, serde::Serialize)]
 pub struct ProjectData {
     /// The unique key identifier of the project.
     pub key: String,
@@ -88,9 +84,7 @@ impl Storable for ProjectData {
 }
 
 /// Data required to create a poll.
-#[derive(
-    Debug, Clone, CandidType, Deserialize, PartialEq, Eq, serde::Serialize,
-)]
+#[derive(Debug, Clone, CandidType, Deserialize, PartialEq, Eq, serde::Serialize)]
 pub struct PollCreateData {
     /// The description of the poll.
     pub description: String,
@@ -103,9 +97,7 @@ pub struct PollCreateData {
 }
 
 /// Describes a pending poll.
-#[derive(
-    Debug, Clone, CandidType, Deserialize, PartialEq, Eq, serde::Serialize,
-)]
+#[derive(Debug, Clone, CandidType, Deserialize, PartialEq, Eq, serde::Serialize)]
 pub struct PendingPoll {
     /// The description of the poll.
     pub description: String,
@@ -149,7 +141,6 @@ impl PendingPoll {
             result,
         }
     }
-
 }
 
 impl Storable for PendingPoll {
@@ -164,9 +155,7 @@ impl Storable for PendingPoll {
     const BOUND: ic_stable_structures::Bound = ic_stable_structures::Bound::Unbounded;
 }
 /// Describes the result of a poll.
-#[derive(
-    Debug, Clone, CandidType, Deserialize, PartialEq, Eq, serde::Serialize,
-)]
+#[derive(Debug, Clone, CandidType, Deserialize, PartialEq, Eq, serde::Serialize)]
 pub enum PollResult {
     /// The poll is accepted.
     Accepted,
@@ -175,9 +164,7 @@ pub enum PollResult {
 }
 
 /// Describes the a poll already closed.
-#[derive(
-    Debug, Clone, CandidType, Deserialize, PartialEq, Eq, serde::Serialize,
-)]
+#[derive(Debug, Clone, CandidType, Deserialize, PartialEq, Eq, serde::Serialize)]
 pub struct ClosedPoll {
     /// The description of the poll.
     pub description: String,
@@ -208,9 +195,7 @@ impl Storable for ClosedPoll {
 }
 
 /// A poll data.
-#[derive(
-    Debug, Clone, CandidType, Deserialize, PartialEq, Eq, serde::Serialize,
-)]
+#[derive(Debug, Clone, CandidType, Deserialize, PartialEq, Eq, serde::Serialize)]
 pub enum Poll {
     /// The poll is pending.
     Pending(PendingPoll),
@@ -232,9 +217,7 @@ impl From<PollCreateData> for PendingPoll {
 }
 
 /// Describes the type of poll.
-#[derive(
-    Debug, Clone, CandidType, Deserialize, PartialEq, Eq, serde::Serialize,
-)]
+#[derive(Debug, Clone, CandidType, Deserialize, PartialEq, Eq, serde::Serialize)]
 pub enum PollType {
     /// A poll to approve a project hash
     ProjectHash { project: String, hash: String },

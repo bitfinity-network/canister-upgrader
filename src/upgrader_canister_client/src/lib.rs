@@ -4,7 +4,8 @@ use candid::Principal;
 use ic_canister_client::{CanisterClient, CanisterClientResult};
 use upgrader_canister_did::error::Result;
 use upgrader_canister_did::{
-    BuildData, ClosedPoll, PendingPoll, Permission, PermissionList, Poll, PollCreateData, ProjectData
+    BuildData, ClosedPoll, PendingPoll, Permission, PermissionList, Poll, PollCreateData,
+    ProjectData,
 };
 
 /// An upgrader canister client.
