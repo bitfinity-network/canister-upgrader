@@ -7,8 +7,7 @@ use ic_stable_structures::stable_structures::Memory;
 use log::info;
 use upgrader_canister_did::error::Result;
 use upgrader_canister_did::{
-    BuildData, Permission, PermissionList, Poll, PollCreateData, PollType, ProjectData,
-    UpgraderCanisterInitData, UpgraderError,
+    BuildData, ClosedPoll, PendingPoll, Permission, PermissionList, Poll, PollCreateData, PollType, ProjectData, UpgraderCanisterInitData, UpgraderError
 };
 
 use crate::build_data::canister_build_data;
@@ -170,10 +169,16 @@ impl UpgraderCanister {
         })
     }
 
-    /// Returns all polls
+    /// Returns all pending polls
     #[query]
-    pub fn poll_get_all(&self) -> BTreeMap<u64, Poll> {
-        STATE.with(|state| state.polls.borrow().all())
+    pub fn poll_get_all_pending(&self) -> BTreeMap<u64, PendingPoll> {
+        STATE.with(|state| state.polls.borrow().all_pending())
+    }
+
+    /// Returns all pending polls
+    #[query]
+    pub fn poll_get_all_closed(&self) -> BTreeMap<u64, ClosedPoll> {
+        STATE.with(|state| state.polls.borrow().all_closed())
     }
 
     /// Returns a poll by id
@@ -184,13 +189,13 @@ impl UpgraderCanister {
 
     /// Returns a poll by id searching in the pending polls
     #[query]
-    pub fn poll_get_pending(&self, id: u64) -> Option<Poll> {
+    pub fn poll_get_pending(&self, id: u64) -> Option<PendingPoll> {
         STATE.with(|state| state.polls.borrow().get_pending(&id))
     }
 
     /// Returns a poll by id searching in the closed polls
     #[query]
-    pub fn poll_get_closed(&self, id: u64) -> Option<Poll> {
+    pub fn poll_get_closed(&self, id: u64) -> Option<ClosedPoll> {
         STATE.with(|state| state.polls.borrow().get_closed(&id))
     }
 

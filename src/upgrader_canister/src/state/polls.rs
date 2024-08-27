@@ -6,7 +6,7 @@ use ic_stable_structures::{
     BTreeMapStructure, CellStructure, MemoryManager, StableBTreeMap, StableCell,
 };
 use upgrader_canister_did::error::{Result, UpgraderError};
-use upgrader_canister_did::{Poll, PollCreateData};
+use upgrader_canister_did::{ClosedPoll, PendingPoll, Poll, PollCreateData, PollResult};
 
 use super::permission::Permissions;
 use crate::constant::{
@@ -17,9 +17,9 @@ use crate::constant::{
 pub struct Polls<M: Memory> {
     /// Contains polls that are not yet closed.
     /// It contains also the polls that are not yet opened.
-    pending_polls: StableBTreeMap<u64, Poll, M>,
+    pending_polls: StableBTreeMap<u64, PendingPoll, M>,
     // Contains the polls that are closed.
-    closed_polls: StableBTreeMap<u64, Poll, M>,
+    closed_polls: StableBTreeMap<u64, ClosedPoll, M>,
     /// The next poll id
     polls_id_sequence: StableCell<u64, M>,
 }
@@ -35,12 +35,12 @@ impl<M: Memory> Polls<M> {
     }
 
     /// Returns the poll data for the given key searching only in the pending polls
-    pub fn get_pending(&self, id: &u64) -> Option<Poll> {
+    pub fn get_pending(&self, id: &u64) -> Option<PendingPoll> {
         self.pending_polls.get(id)
     }
 
     /// Returns the poll data for the given key searching only in the closed polls
-    pub fn get_closed(&self, id: &u64) -> Option<Poll> {
+    pub fn get_closed(&self, id: &u64) -> Option<ClosedPoll> {
         self.closed_polls.get(id)
     }
 
@@ -48,12 +48,18 @@ impl<M: Memory> Polls<M> {
     pub fn get(&self, id: &u64) -> Option<Poll> {
         self.pending_polls
             .get(id)
-            .or_else(|| self.closed_polls.get(id))
+            .map(|x| Poll::Pending(x))
+            .or_else(|| self.closed_polls.get(id).map(|x| Poll::Closed(x)))
     }
 
-    /// Returns all polls
-    pub fn all(&self) -> BTreeMap<u64, Poll> {
+    /// Returns all pending polls
+    pub fn all_pending(&self) -> BTreeMap<u64, PendingPoll> {
         self.pending_polls.iter().collect()
+    }
+
+    /// Returns all closed polls
+    pub fn all_closed(&self) -> BTreeMap<u64, ClosedPoll> {
+        self.closed_polls.iter().collect()
     }
 
     /// Inserts a new poll and returns the generated key
@@ -101,7 +107,7 @@ impl<M: Memory> Polls<M> {
         Ok(())
     }
 
-    /// Finalizes the poll and moves it to the closed polls
+    /// Finalizes the polls by applying the result and moving them to the closed polls store
     pub fn finalize_polls(
         &mut self,
         timestamp_secs: u64,
@@ -117,20 +123,20 @@ impl<M: Memory> Polls<M> {
 
         // close the polls
         for (id, poll) in polls_to_close {
-            self.process_poll(&poll, permissions_service)?;
+            let closed_poll = self.close_and_apply_poll(poll, permissions_service)?;
             self.pending_polls.remove(&id);
-            self.closed_polls.insert(id, poll);
+            self.closed_polls.insert(id, closed_poll);
         }
 
         Ok(())
     }
 
-    /// Process a pool before it is finalized
-    pub fn process_poll(
+    /// Closes the poll and applies the result
+    fn close_and_apply_poll(
         &mut self,
-        poll: &Poll,
+        poll: PendingPoll,
         permissions_service: &mut Permissions<M>,
-    ) -> Result<()> {
+    ) -> Result<ClosedPoll> {
         if poll.yes_voters.len() > poll.no_voters.len() {
             match &poll.poll_type {
                 upgrader_canister_did::PollType::AddPermission {
@@ -151,8 +157,10 @@ impl<M: Memory> Polls<M> {
                 }
                 upgrader_canister_did::PollType::ProjectHash { .. } => (),
             }
+            Ok(poll.close(PollResult::Accepted))
+        } else {
+            Ok(poll.close(PollResult::Rejected))
         }
-        Ok(())
     }
 
     /// Returns the next poll id
@@ -172,7 +180,7 @@ mod test {
     use std::collections::HashSet;
 
     use candid::Principal;
-    use upgrader_canister_did::{Permission, PollType};
+    use upgrader_canister_did::{Permission, PollResult, PollType};
 
     /// Verifies that the next id is generated correctly
     #[test]
@@ -214,8 +222,8 @@ mod test {
 
         // Assert
         assert_eq!(polls.next_id(), 2);
-        assert_eq!(polls.get(&poll_0_id).unwrap().description, "poll_0");
-        assert_eq!(polls.get(&poll_1_id).unwrap().description, "poll_1");
+        assert_eq!(polls.get_pending(&poll_0_id).unwrap().description, "poll_0");
+        assert_eq!(polls.get_pending(&poll_1_id).unwrap().description, "poll_1");
     }
 
     /// Should return an error if voting for a poll that does not exist
@@ -258,7 +266,7 @@ mod test {
         polls.vote(poll_id, principal_3, true, 0).unwrap();
 
         // Assert
-        let poll = polls.get(&poll_id).unwrap();
+        let poll = polls.get_pending(&poll_id).unwrap();
         assert_eq!(poll.yes_voters.len(), 2);
         assert_eq!(poll.no_voters.len(), 1);
 
@@ -297,7 +305,7 @@ mod test {
         polls.vote(poll_id, principal_4, true, 0).unwrap();
 
         // Assert
-        let poll = polls.get(&poll_id).unwrap();
+        let poll = polls.get_pending(&poll_id).unwrap();
         assert_eq!(poll.yes_voters.len(), 2);
         assert_eq!(poll.no_voters.len(), 2);
 
@@ -378,7 +386,7 @@ mod test {
         let principal_2 = Principal::from_slice(&[2, 29]);
         let principal_3 = Principal::from_slice(&[3, 29]);
 
-        let poll = upgrader_canister_did::Poll {
+        let poll = upgrader_canister_did::PendingPoll {
             description: "poll_0".to_string(),
             poll_type: PollType::AddPermission {
                 principals: vec![principal_1, principal_2],
@@ -391,9 +399,10 @@ mod test {
         };
 
         // Act
-        polls.process_poll(&poll, &mut permissions).unwrap();
+        let closed_poll = polls.close_and_apply_poll(poll, &mut permissions).unwrap();
 
         // Assert
+        assert_eq!(closed_poll.result, PollResult::Accepted);
         assert_eq!(
             permissions.get_permissions(&principal_1).permissions,
             HashSet::from([Permission::Admin])
@@ -420,7 +429,7 @@ mod test {
         let principal_2 = Principal::from_slice(&[2, 29]);
         let principal_3 = Principal::from_slice(&[3, 29]);
 
-        let poll = upgrader_canister_did::Poll {
+        let poll = upgrader_canister_did::PendingPoll {
             description: "poll_0".to_string(),
             poll_type: PollType::AddPermission {
                 principals: vec![principal_1, principal_2],
@@ -433,9 +442,10 @@ mod test {
         };
 
         // Act
-        polls.process_poll(&poll, &mut permissions).unwrap();
+        let closed_poll = polls.close_and_apply_poll(poll, &mut permissions).unwrap();
 
         // Assert
+        assert_eq!(closed_poll.result, PollResult::Rejected);
         assert_eq!(
             permissions.get_permissions(&principal_1).permissions,
             HashSet::new()
@@ -486,7 +496,7 @@ mod test {
             )
             .unwrap();
 
-        let poll = upgrader_canister_did::Poll {
+        let poll = upgrader_canister_did::PendingPoll {
             description: "poll_0".to_string(),
             poll_type: PollType::RemovePermission {
                 principals: vec![principal_1, principal_2],
@@ -499,9 +509,10 @@ mod test {
         };
 
         // Act
-        polls.process_poll(&poll, &mut permissions).unwrap();
+        let closed_poll = polls.close_and_apply_poll(poll, &mut permissions).unwrap();
 
         // Assert
+        assert_eq!(closed_poll.result, PollResult::Accepted);
         assert_eq!(
             permissions.get_permissions(&principal_1).permissions,
             HashSet::from([Permission::CreatePoll])
@@ -556,7 +567,7 @@ mod test {
             )
             .unwrap();
 
-        let poll = upgrader_canister_did::Poll {
+        let poll = upgrader_canister_did::PendingPoll {
             description: "poll_0".to_string(),
             poll_type: PollType::RemovePermission {
                 principals: vec![principal_1, principal_2],
@@ -569,9 +580,10 @@ mod test {
         };
 
         // Act
-        polls.process_poll(&poll, &mut permissions).unwrap();
+        let closed_poll = polls.close_and_apply_poll(poll, &mut permissions).unwrap();
 
         // Assert
+        assert_eq!(closed_poll.result, PollResult::Rejected);
         assert_eq!(
             permissions.get_permissions(&principal_1).permissions,
             HashSet::from([

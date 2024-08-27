@@ -342,11 +342,11 @@ async fn test_caller_can_create_and_get_polls() {
     let poll_id = user_1_client.poll_create(&poll).await.unwrap().unwrap();
 
     // Assert
-    let polls = user_2_client.poll_get_all().await.unwrap();
+    let polls = user_2_client.poll_get_all_pending().await.unwrap();
     assert_eq!(polls.len(), 1);
     assert_eq!(polls[&poll_id], poll.clone().into());
 
-    let poll_from_get = user_2_client.poll_get(poll_id).await.unwrap().unwrap();
+    let poll_from_get = user_2_client.poll_get_pending(poll_id).await.unwrap().unwrap();
     assert_eq!(poll_from_get, poll.into());
 }
 
@@ -416,7 +416,7 @@ async fn test_caller_cant_create_polls_if_not_allowed() {
     }
 
     // Assert
-    let polls = user_1_client.poll_get_all().await.unwrap();
+    let polls = user_1_client.poll_get_all_pending().await.unwrap();
     assert!(polls.is_empty());
 }
 
@@ -472,7 +472,7 @@ async fn test_caller_can_vote_in_poll() {
         .unwrap();
 
     // Assert
-    let poll = user_1_client.poll_get(poll_id).await.unwrap().unwrap();
+    let poll = user_1_client.poll_get_pending(poll_id).await.unwrap().unwrap();
     assert_eq!(poll.yes_voters.len(), 1);
     assert!(poll.yes_voters.contains(&user_2_principal));
     assert_eq!(poll.no_voters.len(), 1);
@@ -526,7 +526,7 @@ async fn test_caller_cant_vote_in_poll_if_not_allowed() {
     }
 
     // Assert
-    let poll = user_1_client.poll_get(poll_id).await.unwrap().unwrap();
+    let poll = user_1_client.poll_get_pending(poll_id).await.unwrap().unwrap();
     assert!(poll.yes_voters.is_empty());
     assert!(poll.no_voters.is_empty());
 }
