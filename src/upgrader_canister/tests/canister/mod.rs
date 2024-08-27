@@ -4,7 +4,7 @@ use candid::Principal;
 use ic_canister_client::CanisterClientResult;
 use ic_exports::pocket_ic::PocketIc;
 use upgrader_canister::constant::POLL_TIMER_INTERVAL;
-use upgrader_canister_did::{Permission, PollCreateData, PollResult, PollType, ProjectData};
+use upgrader_canister_did::{Permission, Poll, PollCreateData, PollResult, PollType, ProjectData};
 
 use crate::pocket_ic::{build_client, deploy_canister, ADMIN};
 
@@ -476,15 +476,17 @@ async fn test_caller_can_vote_in_poll() {
         .unwrap();
 
     // Assert
-    let poll = user_1_client
-        .poll_get_pending(poll_id)
-        .await
-        .unwrap()
-        .unwrap();
-    assert_eq!(poll.yes_voters.len(), 1);
-    assert!(poll.yes_voters.contains(&user_2_principal));
-    assert_eq!(poll.no_voters.len(), 1);
-    assert!(poll.no_voters.contains(&user_1_principal));
+    let poll = user_1_client.poll_get(poll_id).await.unwrap().unwrap();
+
+    match poll {
+        Poll::Pending(poll) => {
+            assert_eq!(poll.yes_voters.len(), 1);
+            assert!(poll.yes_voters.contains(&user_2_principal));
+            assert_eq!(poll.no_voters.len(), 1);
+            assert!(poll.no_voters.contains(&user_1_principal));
+        }
+        _ => panic!("Poll should be pending"),
+    }
 }
 
 /// Test that the caller can't vote in a poll if not allowed
@@ -586,6 +588,13 @@ async fn test_poll_timer() {
         .unwrap();
     assert_eq!(poll.end_timestamp_secs, 1);
     assert_eq!(poll.result, PollResult::Rejected);
+
+    assert!(admin_client
+        .poll_get_all_pending()
+        .await
+        .unwrap()
+        .is_empty());
+    assert!(!admin_client.poll_get_all_closed().await.unwrap().is_empty());
 }
 
 fn assert_inspect_message_error<T: std::fmt::Debug>(result: &CanisterClientResult<T>) {
