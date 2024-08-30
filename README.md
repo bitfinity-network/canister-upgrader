@@ -65,9 +65,9 @@ Verify that the canister is working, this should return information about the ca
 dfx canister call $UPGRADER_CANISTER_ID canister_build_data --network local
 ```
 
-### Create a project, a poll, and vote it
+### Create a project, a poll, and vote for it
 
-Before a user attemts to create a project or a poll, the administrator should grant him the required permissions.
+Before a user attempts to create a project or a poll, the administrator should grant him the required permissions.
 For simplicity, in this example we use the admin account itself to perform every operation.
 
 Grant the permissions to create a project, create a poll and vote
@@ -85,9 +85,10 @@ Create a poll for the test_project
 dfx canister call $UPGRADER_CANISTER_ID poll_create --network local '(record { description = "A new hash"; end_timestamp_secs = 999_999_999_999 : nat64; poll_type = variant { ProjectHash = record { hash = "hash"; project = "test_project" } }; start_timestamp_secs = 0 : nat64; }, )'
 ```
 
-this call returns the ID of the new poll, for example, in the following returned data the poll ID is `1`:
+the previous call returns the ID of the new poll, for example, here the poll ID is `1`:
 ```bash
 (variant { Ok = 1 : nat64 })
+POLL_ID=1
 ```
 
 Now let's vote by approving for the poll (use `false` to reject instead)
