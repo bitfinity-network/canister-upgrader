@@ -3,7 +3,8 @@ use std::sync::Arc;
 use candid::Principal;
 use ic_canister_client::CanisterClientResult;
 use ic_exports::pocket_ic::PocketIc;
-use upgrader_canister_did::{Permission, PollCreateData, PollType, ProjectData};
+use upgrader_canister::constant::POLL_TIMER_INTERVAL;
+use upgrader_canister_did::{Permission, Poll, PollCreateData, PollResult, PollType, ProjectData};
 
 use crate::pocket_ic::{build_client, deploy_canister, ADMIN};
 
@@ -341,11 +342,15 @@ async fn test_caller_can_create_and_get_polls() {
     let poll_id = user_1_client.poll_create(&poll).await.unwrap().unwrap();
 
     // Assert
-    let polls = user_2_client.poll_get_all().await.unwrap();
+    let polls = user_2_client.poll_get_all_pending().await.unwrap();
     assert_eq!(polls.len(), 1);
     assert_eq!(polls[&poll_id], poll.clone().into());
 
-    let poll_from_get = user_2_client.poll_get(poll_id).await.unwrap().unwrap();
+    let poll_from_get = user_2_client
+        .poll_get_pending(poll_id)
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(poll_from_get, poll.into());
 }
 
@@ -415,7 +420,7 @@ async fn test_caller_cant_create_polls_if_not_allowed() {
     }
 
     // Assert
-    let polls = user_1_client.poll_get_all().await.unwrap();
+    let polls = user_1_client.poll_get_all_pending().await.unwrap();
     assert!(polls.is_empty());
 }
 
@@ -472,10 +477,16 @@ async fn test_caller_can_vote_in_poll() {
 
     // Assert
     let poll = user_1_client.poll_get(poll_id).await.unwrap().unwrap();
-    assert_eq!(poll.yes_voters.len(), 1);
-    assert!(poll.yes_voters.contains(&user_2_principal));
-    assert_eq!(poll.no_voters.len(), 1);
-    assert!(poll.no_voters.contains(&user_1_principal));
+
+    match poll {
+        Poll::Pending(poll) => {
+            assert_eq!(poll.yes_voters.len(), 1);
+            assert!(poll.yes_voters.contains(&user_2_principal));
+            assert_eq!(poll.no_voters.len(), 1);
+            assert!(poll.no_voters.contains(&user_1_principal));
+        }
+        _ => panic!("Poll should be pending"),
+    }
 }
 
 /// Test that the caller can't vote in a poll if not allowed
@@ -525,9 +536,65 @@ async fn test_caller_cant_vote_in_poll_if_not_allowed() {
     }
 
     // Assert
-    let poll = user_1_client.poll_get(poll_id).await.unwrap().unwrap();
+    let poll = user_1_client
+        .poll_get_pending(poll_id)
+        .await
+        .unwrap()
+        .unwrap();
     assert!(poll.yes_voters.is_empty());
     assert!(poll.no_voters.is_empty());
+}
+
+/// Test that the poll timer runs
+#[tokio::test]
+async fn test_poll_timer() {
+    // Arrange
+    let (pocket, canister_principal) = deploy_canister(None).await;
+    let admin_principal = ADMIN;
+    let admin_client = build_client(pocket.clone(), canister_principal, admin_principal);
+
+    let project_key = "project-10";
+    create_project(pocket.clone(), canister_principal, project_key).await;
+
+    admin_client
+        .admin_permissions_add(
+            admin_principal,
+            &[Permission::CreatePoll, Permission::VotePoll],
+        )
+        .await
+        .unwrap()
+        .unwrap();
+
+    let poll = PollCreateData {
+        description: "Description".to_string(),
+        poll_type: PollType::ProjectHash {
+            project: project_key.to_string(),
+            hash: "hash".to_string(),
+        },
+        start_timestamp_secs: 0,
+        end_timestamp_secs: 1,
+    };
+    let poll_id = admin_client.poll_create(&poll).await.unwrap().unwrap();
+
+    // Act
+    pocket.advance_time(POLL_TIMER_INTERVAL * 2).await;
+    pocket.tick().await;
+
+    // Assert
+    let poll = admin_client
+        .poll_get_closed(poll_id)
+        .await
+        .unwrap()
+        .unwrap();
+    assert_eq!(poll.end_timestamp_secs, 1);
+    assert_eq!(poll.result, PollResult::Rejected);
+
+    assert!(admin_client
+        .poll_get_all_pending()
+        .await
+        .unwrap()
+        .is_empty());
+    assert!(!admin_client.poll_get_all_closed().await.unwrap().is_empty());
 }
 
 fn assert_inspect_message_error<T: std::fmt::Debug>(result: &CanisterClientResult<T>) {

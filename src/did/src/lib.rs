@@ -31,9 +31,7 @@ pub struct UpgraderCanisterInitData {
 }
 
 /// Principal specific permission
-#[derive(
-    Debug, Clone, CandidType, Deserialize, Hash, PartialEq, Eq, PartialOrd, Ord, serde::Serialize,
-)]
+#[derive(Debug, Clone, CandidType, Deserialize, Hash, PartialEq, Eq, serde::Serialize)]
 pub enum Permission {
     /// Gives administrator permissions
     Admin,
@@ -63,9 +61,7 @@ impl Storable for PermissionList {
 }
 
 /// Contains the project data.
-#[derive(
-    Debug, Clone, CandidType, Deserialize, Hash, PartialEq, Eq, PartialOrd, Ord, serde::Serialize,
-)]
+#[derive(Debug, Clone, CandidType, Deserialize, PartialEq, Eq, serde::Serialize)]
 pub struct ProjectData {
     /// The unique key identifier of the project.
     pub key: String,
@@ -88,9 +84,7 @@ impl Storable for ProjectData {
 }
 
 /// Data required to create a poll.
-#[derive(
-    Debug, Clone, CandidType, Deserialize, Hash, PartialEq, Eq, PartialOrd, Ord, serde::Serialize,
-)]
+#[derive(Debug, Clone, CandidType, Deserialize, PartialEq, Eq, serde::Serialize)]
 pub struct PollCreateData {
     /// The description of the poll.
     pub description: String,
@@ -102,11 +96,9 @@ pub struct PollCreateData {
     pub end_timestamp_secs: u64,
 }
 
-/// Describes the type of poll.
-#[derive(
-    Debug, Clone, CandidType, Deserialize, Hash, PartialEq, Eq, PartialOrd, Ord, serde::Serialize,
-)]
-pub struct Poll {
+/// Describes a pending poll.
+#[derive(Debug, Clone, CandidType, Deserialize, PartialEq, Eq, serde::Serialize)]
+pub struct PendingPoll {
     /// The description of the poll.
     pub description: String,
     /// The type of poll.
@@ -121,7 +113,97 @@ pub struct Poll {
     pub end_timestamp_secs: u64,
 }
 
-impl From<PollCreateData> for Poll {
+impl PendingPoll {
+    /// Returns the total number of votes.
+    pub fn total_votes(&self) -> u64 {
+        (self.no_voters.len() + self.yes_voters.len()) as u64
+    }
+
+    /// Returns the number of yes votes.
+    pub fn yes_votes(&self) -> u64 {
+        self.yes_voters.len() as u64
+    }
+
+    /// Returns the number of no votes.
+    pub fn no_votes(&self) -> u64 {
+        self.no_voters.len() as u64
+    }
+
+    /// Closes the poll
+    pub fn close(self, result: PollResult) -> ClosedPoll {
+        ClosedPoll {
+            description: self.description,
+            poll_type: self.poll_type,
+            no_voters: self.no_voters,
+            yes_voters: self.yes_voters,
+            start_timestamp_secs: self.start_timestamp_secs,
+            end_timestamp_secs: self.end_timestamp_secs,
+            result,
+        }
+    }
+}
+
+impl Storable for PendingPoll {
+    fn to_bytes(&self) -> std::borrow::Cow<[u8]> {
+        codec::encode(self).into()
+    }
+
+    fn from_bytes(bytes: std::borrow::Cow<[u8]>) -> Self {
+        codec::decode(&bytes)
+    }
+
+    const BOUND: ic_stable_structures::Bound = ic_stable_structures::Bound::Unbounded;
+}
+/// Describes the result of a poll.
+#[derive(Debug, Clone, CandidType, Deserialize, PartialEq, Eq, serde::Serialize)]
+pub enum PollResult {
+    /// The poll is accepted.
+    Accepted,
+    /// The poll is rejected.
+    Rejected,
+}
+
+/// Describes the a poll already closed.
+#[derive(Debug, Clone, CandidType, Deserialize, PartialEq, Eq, serde::Serialize)]
+pub struct ClosedPoll {
+    /// The description of the poll.
+    pub description: String,
+    /// The type of poll.
+    pub poll_type: PollType,
+    /// The list of principals that voted no.
+    pub no_voters: Vec<Principal>,
+    /// The list of principals that voted yes.
+    pub yes_voters: Vec<Principal>,
+    /// The timestamp when the poll opens.
+    pub start_timestamp_secs: u64,
+    /// The timestamp when the poll closes.
+    pub end_timestamp_secs: u64,
+    /// The result of the poll.
+    pub result: PollResult,
+}
+
+impl Storable for ClosedPoll {
+    fn to_bytes(&self) -> std::borrow::Cow<[u8]> {
+        codec::encode(self).into()
+    }
+
+    fn from_bytes(bytes: std::borrow::Cow<[u8]>) -> Self {
+        codec::decode(&bytes)
+    }
+
+    const BOUND: ic_stable_structures::Bound = ic_stable_structures::Bound::Unbounded;
+}
+
+/// A poll data.
+#[derive(Debug, Clone, CandidType, Deserialize, PartialEq, Eq, serde::Serialize)]
+pub enum Poll {
+    /// The poll is pending.
+    Pending(PendingPoll),
+    /// The poll is closed.
+    Closed(ClosedPoll),
+}
+
+impl From<PollCreateData> for PendingPoll {
     fn from(value: PollCreateData) -> Self {
         Self {
             description: value.description,
@@ -135,9 +217,7 @@ impl From<PollCreateData> for Poll {
 }
 
 /// Describes the type of poll.
-#[derive(
-    Debug, Clone, CandidType, Deserialize, Hash, PartialEq, Eq, PartialOrd, Ord, serde::Serialize,
-)]
+#[derive(Debug, Clone, CandidType, Deserialize, PartialEq, Eq, serde::Serialize)]
 pub enum PollType {
     /// A poll to approve a project hash
     ProjectHash { project: String, hash: String },
@@ -151,18 +231,6 @@ pub enum PollType {
         principals: Vec<Principal>,
         permissions: Vec<Permission>,
     },
-}
-
-impl Storable for Poll {
-    fn to_bytes(&self) -> std::borrow::Cow<[u8]> {
-        codec::encode(self).into()
-    }
-
-    fn from_bytes(bytes: std::borrow::Cow<[u8]>) -> Self {
-        codec::decode(&bytes)
-    }
-
-    const BOUND: ic_stable_structures::Bound = ic_stable_structures::Bound::Unbounded;
 }
 
 #[cfg(test)]
@@ -226,7 +294,7 @@ mod test {
 
     #[test]
     fn test_candid_poll_data() {
-        let poll = Poll {
+        let poll = PendingPoll {
             description: "Description".to_string(),
             poll_type: PollType::ProjectHash {
                 project: "project".to_string(),
@@ -239,14 +307,14 @@ mod test {
         };
 
         let serialized = Encode!(&poll).unwrap();
-        let deserialized = Decode!(serialized.as_slice(), Poll).unwrap();
+        let deserialized = Decode!(serialized.as_slice(), PendingPoll).unwrap();
 
         assert_eq!(poll, deserialized);
     }
 
     #[test]
     fn test_storable_poll_data() {
-        let poll = Poll {
+        let poll = PendingPoll {
             description: "Description".to_string(),
             poll_type: PollType::AddPermission {
                 principals: vec![Principal::from_slice(&[1u8; 29])],
@@ -259,7 +327,7 @@ mod test {
         };
 
         let serialized = poll.to_bytes();
-        let deserialized = Poll::from_bytes(serialized);
+        let deserialized = PendingPoll::from_bytes(serialized);
 
         assert_eq!(poll, deserialized);
     }

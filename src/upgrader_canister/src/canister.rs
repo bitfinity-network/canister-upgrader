@@ -4,13 +4,15 @@ use candid::Principal;
 use ic_canister::{init, post_upgrade, query, update, Canister, MethodType, PreUpdate};
 use ic_exports::ic_kit::ic;
 use ic_stable_structures::stable_structures::Memory;
+use log::info;
 use upgrader_canister_did::error::Result;
 use upgrader_canister_did::{
-    BuildData, Permission, PermissionList, Poll, PollCreateData, PollType, ProjectData,
-    UpgraderCanisterInitData, UpgraderError,
+    BuildData, ClosedPoll, PendingPoll, Permission, PermissionList, Poll, PollCreateData, PollType,
+    ProjectData, UpgraderCanisterInitData, UpgraderError,
 };
 
 use crate::build_data::canister_build_data;
+use crate::constant::POLL_TIMER_INTERVAL;
 use crate::state::permission::Permissions;
 use crate::state::UpgraderCanisterState;
 
@@ -30,7 +32,9 @@ impl PreUpdate for UpgraderCanister {
 
 impl UpgraderCanister {
     #[post_upgrade]
-    pub fn post_upgrade(&mut self) {}
+    pub fn post_upgrade(&mut self) {
+        self.set_timers();
+    }
 
     #[init]
     pub fn init(&mut self, data: UpgraderCanisterInitData) {
@@ -39,7 +43,29 @@ impl UpgraderCanister {
             permissions
                 .add_permissions(data.admin, vec![Permission::Admin])
                 .expect("failed to add admin permission");
-        })
+        });
+        self.set_timers();
+    }
+
+    /// Initializes the timers
+    pub fn set_timers(&mut self) {
+        // This block of code only need to be run in the wasm environment
+        if cfg!(target_family = "wasm") {
+            use ic_exports::ic_cdk_timers::set_timer_interval;
+
+            set_timer_interval(POLL_TIMER_INTERVAL, move || {
+                STATE.with(|state| {
+                    let mut permissions = state.permissions.borrow_mut();
+                    state
+                        .polls
+                        .borrow_mut()
+                        .finalize_polls(time_secs(), &mut permissions)
+                        .expect("Finalize polls error");
+                });
+            });
+        } else {
+            info!("Not setting timers as not in wasm environment");
+        }
     }
 
     /// Returns the build data of the canister
@@ -83,10 +109,10 @@ impl UpgraderCanister {
     ) -> Result<PermissionList> {
         STATE.with(|state| {
             state.permissions.borrow().check_admin(&ic::caller())?;
-            Ok(state
+            state
                 .permissions
                 .borrow_mut()
-                .remove_permissions(principal, &permissions))
+                .remove_permissions(principal, &permissions)
         })
     }
 
@@ -144,16 +170,34 @@ impl UpgraderCanister {
         })
     }
 
-    /// Returns all polls
+    /// Returns all pending polls
     #[query]
-    pub fn poll_get_all(&self) -> BTreeMap<u64, Poll> {
-        STATE.with(|state| state.polls.borrow().all())
+    pub fn poll_get_all_pending(&self) -> BTreeMap<u64, PendingPoll> {
+        STATE.with(|state| state.polls.borrow().all_pending())
+    }
+
+    /// Returns all pending polls
+    #[query]
+    pub fn poll_get_all_closed(&self) -> BTreeMap<u64, ClosedPoll> {
+        STATE.with(|state| state.polls.borrow().all_closed())
     }
 
     /// Returns a poll by id
     #[query]
     pub fn poll_get(&self, id: u64) -> Option<Poll> {
         STATE.with(|state| state.polls.borrow().get(&id))
+    }
+
+    /// Returns a poll by id searching in the pending polls
+    #[query]
+    pub fn poll_get_pending(&self, id: u64) -> Option<PendingPoll> {
+        STATE.with(|state| state.polls.borrow().get_pending(&id))
+    }
+
+    /// Returns a poll by id searching in the closed polls
+    #[query]
+    pub fn poll_get_closed(&self, id: u64) -> Option<ClosedPoll> {
+        STATE.with(|state| state.polls.borrow().get_closed(&id))
     }
 
     /// Inspects permissions for the poll_create method

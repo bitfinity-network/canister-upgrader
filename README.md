@@ -28,3 +28,75 @@ The available permissions are:
 - `CreatePoll`: Allows calling the endpoints to create a poll
 - `VotePoll`: Allows calling the endpoints to vote in a poll
 
+## Manual local Testing
+
+### Prepare the environment
+
+Build the canister wasm:
+```bash
+./scripts/build.sh
+```
+
+(Optional) If you don't have one yet, create a local dfx identity
+```bash
+dfx identity new --storage-mode=plaintext alice
+dfx identity use alice
+```
+
+Get current IC identity pricipal
+```bash
+IDENTITY_PRICIPAL=$(dfx identity get-principal)
+echo $IDENTITY_PRICIPAL
+```
+
+Start dfx in background
+```bash
+dfx start --clean --background --artificial-delay 0
+```
+
+Install the upgrader-canister and set the current IC identity as administrator
+```bash
+dfx canister install --mode=install --yes --network=local upgrader_canister --argument="(record { admin = principal \"$IDENTITY_PRICIPAL\" })"
+UPGRADER_CANISTER_ID=$(dfx canister id upgrader_canister)
+```
+
+Verify that the canister is working, this should return information about the canister build
+```bash
+dfx canister call $UPGRADER_CANISTER_ID canister_build_data --network local
+```
+
+### Create a project, a poll, and vote for it
+
+Before a user attempts to create a project or a poll, the administrator should grant him the required permissions.
+For simplicity, in this example we use the admin account itself to perform every operation.
+
+Grant the permissions to create a project, create a poll and vote
+```bash
+dfx canister call $UPGRADER_CANISTER_ID admin_permissions_add --network local "(principal \"$IDENTITY_PRICIPAL\", vec {variant { CreateProject }; variant { CreatePoll }; variant { VotePoll }})"
+```
+
+Create a project
+```bash
+dfx canister call $UPGRADER_CANISTER_ID project_create --network local "(record { key = \"test_project\" ; name = \"test_project_name\"; description = \"test_project_description\" })"
+```
+
+Create a poll for the test_project
+```bash
+dfx canister call $UPGRADER_CANISTER_ID poll_create --network local '(record { description = "A new hash"; end_timestamp_secs = 999_999_999_999 : nat64; poll_type = variant { ProjectHash = record { hash = "hash"; project = "test_project" } }; start_timestamp_secs = 0 : nat64; }, )'
+```
+
+the previous call returns the ID of the new poll, for example, here the poll ID is `1`:
+```bash
+(variant { Ok = 1 : nat64 })
+POLL_ID=1
+```
+
+Now let's vote by approving for the poll (use `false` to reject instead)
+```bash
+dfx canister call $UPGRADER_CANISTER_ID poll_vote --network local "($POLL_ID: nat64, true)"
+```
+
+We can now verify that the vote is registered
+```bash
+dfx canister call $UPGRADER_CANISTER_ID poll_get --network local "($POLL_ID: nat64)"
+```

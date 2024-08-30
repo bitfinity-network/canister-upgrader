@@ -100,7 +100,8 @@ impl<M: Memory> Permissions<M> {
         &mut self,
         principal: Principal,
         permissions: &[Permission],
-    ) -> PermissionList {
+    ) -> Result<PermissionList> {
+        self.check_anonymous_principal(&principal)?;
         let mut existing_permissions = self.permission_data.get(&principal).unwrap_or_default();
         existing_permissions
             .permissions
@@ -111,7 +112,7 @@ impl<M: Memory> Permissions<M> {
         } else {
             self.permission_data.remove(&principal);
         }
-        existing_permissions
+        Ok(existing_permissions)
     }
 
     /// Return the user permissions
@@ -232,14 +233,16 @@ mod tests {
 
         assert_eq!(
             PermissionList::default(),
-            permissions.remove_permissions(
-                principal,
-                &[
-                    Permission::VotePoll,
-                    Permission::CreatePoll,
-                    Permission::Admin
-                ]
-            )
+            permissions
+                .remove_permissions(
+                    principal,
+                    &[
+                        Permission::VotePoll,
+                        Permission::CreatePoll,
+                        Permission::Admin
+                    ]
+                )
+                .unwrap()
         );
         assert_eq!(
             PermissionList::default(),
@@ -250,6 +253,7 @@ mod tests {
             PermissionList::default(),
             permissions
                 .remove_permissions(principal, &[Permission::VotePoll, Permission::CreatePoll])
+                .unwrap()
         );
         assert_eq!(
             PermissionList::default(),
@@ -359,12 +363,21 @@ mod tests {
 
         // remove permissions
         {
-            permissions.remove_permissions(principal_1, &[Permission::CreatePoll]);
-            permissions.remove_permissions(principal_2, &[Permission::CreatePoll]);
-            permissions.remove_permissions(principal_3, &[Permission::CreatePoll]);
-            permissions.remove_permissions(principal_4, &[Permission::CreatePoll]);
             permissions
-                .remove_permissions(principal_5, &[Permission::CreatePoll, Permission::VotePoll]);
+                .remove_permissions(principal_1, &[Permission::CreatePoll])
+                .unwrap();
+            permissions
+                .remove_permissions(principal_2, &[Permission::CreatePoll])
+                .unwrap();
+            permissions
+                .remove_permissions(principal_3, &[Permission::CreatePoll])
+                .unwrap();
+            permissions
+                .remove_permissions(principal_4, &[Permission::CreatePoll])
+                .unwrap();
+            permissions
+                .remove_permissions(principal_5, &[Permission::CreatePoll, Permission::VotePoll])
+                .unwrap();
 
             // Assert
             assert!(!permissions.has_all_permissions(&principal_1, &[Permission::CreatePoll]));
@@ -501,7 +514,9 @@ mod tests {
             .unwrap();
         assert_eq!(Ok(()), permissions.check_admin(&principal_1));
 
-        permissions.remove_permissions(principal_1, &[Permission::Admin]);
+        permissions
+            .remove_permissions(principal_1, &[Permission::Admin])
+            .unwrap();
         assert_eq!(
             Err(UpgraderError::NotAuthorized),
             permissions.check_admin(&principal_1)

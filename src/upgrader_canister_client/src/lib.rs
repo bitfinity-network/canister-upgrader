@@ -4,7 +4,8 @@ use candid::Principal;
 use ic_canister_client::{CanisterClient, CanisterClientResult};
 use upgrader_canister_did::error::Result;
 use upgrader_canister_did::{
-    BuildData, Permission, PermissionList, Poll, PollCreateData, ProjectData,
+    BuildData, ClosedPoll, PendingPoll, Permission, PermissionList, Poll, PollCreateData,
+    ProjectData,
 };
 
 /// An upgrader canister client.
@@ -98,14 +99,29 @@ impl<C: CanisterClient> UpgraderCanisterClient<C> {
         self.client.update("project_create", (project,)).await
     }
 
-    /// Returns all polls
-    pub async fn poll_get_all(&self) -> CanisterClientResult<BTreeMap<u64, Poll>> {
-        self.client.query("poll_get_all", ()).await
+    /// Returns all pending polls
+    pub async fn poll_get_all_pending(&self) -> CanisterClientResult<BTreeMap<u64, PendingPoll>> {
+        self.client.query("poll_get_all_pending", ()).await
+    }
+
+    /// Returns all closed polls
+    pub async fn poll_get_all_closed(&self) -> CanisterClientResult<BTreeMap<u64, ClosedPoll>> {
+        self.client.query("poll_get_all_closed", ()).await
     }
 
     /// Returns a poll by id
     pub async fn poll_get(&self, id: u64) -> CanisterClientResult<Option<Poll>> {
         self.client.query("poll_get", (id,)).await
+    }
+
+    /// Returns a poll by id searching in the pending polls
+    pub async fn poll_get_pending(&self, id: u64) -> CanisterClientResult<Option<PendingPoll>> {
+        self.client.query("poll_get_pending", (id,)).await
+    }
+
+    /// Returns a poll by id searching in the closed polls
+    pub async fn poll_get_closed(&self, id: u64) -> CanisterClientResult<Option<ClosedPoll>> {
+        self.client.query("poll_get_closed", (id,)).await
     }
 
     /// Creates a new poll and returns the generated poll id
