@@ -29,6 +29,7 @@ jobs:
       - name: machine setup
         run: |
           cargo install ic-wasm
+          cargo install candid-extractor
 
       - name: rustfmt
         run: |

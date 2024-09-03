@@ -12,6 +12,7 @@ build_upgrader_canister() {
     # cargo run -p upgrader_canister --features export-api > $WASM_DIR/upgrader_canister.did
     cargo build -p upgrader_canister --target wasm32-unknown-unknown --release
     ic-wasm $WASM_DIR/upgrader_canister.wasm -o $WASM_DIR/upgrader_canister.wasm shrink
+    candid-extractor $WASM_DIR/upgrader_canister.wasm > $WASM_DIR/upgrader_canister.did
     gzip -k "$WASM_DIR/upgrader_canister.wasm" --force
 }
 
