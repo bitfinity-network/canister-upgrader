@@ -1,8 +1,7 @@
 use std::collections::BTreeMap;
 
 use candid::Principal;
-use ic_cdk::{init, query};
-use ic_exports::ic_cdk::{post_upgrade, update};
+use ic_exports::ic_cdk::{init, query, post_upgrade, update};
 use ic_exports::ic_kit::ic;
 use ic_stable_structures::stable_structures::Memory;
 use log::info;
@@ -32,7 +31,7 @@ pub fn init(data: UpgraderCanisterInitData) {
         permissions
             .add_permissions(data.admin, vec![Permission::Admin])
             .expect("failed to add admin permission");
-    });
+    });    
     set_timers();
 }
 

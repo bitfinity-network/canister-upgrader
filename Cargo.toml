@@ -17,6 +17,7 @@ upgrader_canister_did = { path = "src/did" }
 
 anyhow = "1.0"
 candid = "0.10"
+ic-cdk = "0.16"
 # ic-canister = { git = "https://github.com/bitfinity-network/canister-sdk", package = "ic-canister", tag = "v0.20.x" }
 ic-exports = { git = "https://github.com/bitfinity-network/canister-sdk", package = "ic-exports", tag = "v0.20.x" }
 ic-helpers = { git = "https://github.com/bitfinity-network/canister-sdk", package = "ic-helpers", tag = "v0.20.x" }
