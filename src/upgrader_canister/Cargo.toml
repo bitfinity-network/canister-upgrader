@@ -5,7 +5,7 @@ edition.workspace = true
 
 [dependencies]
 candid = { workspace = true }
-ic-canister = { workspace = true }
+ic-cdk = { workspace = true }
 ic-exports = { workspace = true }
 ic-log = { workspace = true }
 ic-storage = { workspace = true }

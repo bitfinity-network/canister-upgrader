@@ -1,3 +1,3 @@
-fn main() {
-    println!("{}", upgrader_canister::idl());
-}
+pub use upgrader_canister::*;
+
+fn main() {}

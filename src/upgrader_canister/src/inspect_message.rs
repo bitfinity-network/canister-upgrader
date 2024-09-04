@@ -3,7 +3,6 @@
 use ic_exports::ic_cdk::{self, api};
 use ic_exports::ic_kit::ic;
 
-use crate::canister::UpgraderCanister;
 use crate::state::UpgraderCanisterState;
 
 /// NOTE: inspect is disabled for non-wasm targets because without it we are getting a weird compilation error
@@ -28,9 +27,9 @@ fn inspect_message_impl(state: &UpgraderCanisterState) {
 
     let check_result = match method.as_str() {
         method if method.starts_with("admin_") => permissions.check_admin(&ic::caller()),
-        "project_create" => UpgraderCanister::project_create_inspect(&permissions, &ic::caller()),
-        "poll_create" => UpgraderCanister::poll_create_inspect(&permissions, &ic::caller()),
-        "poll_vote" => UpgraderCanister::poll_vote_inspect(&permissions, &ic::caller()),
+        "project_create" => crate::canister::project_create_inspect(&permissions, &ic::caller()),
+        "poll_create" => crate::canister::poll_create_inspect(&permissions, &ic::caller()),
+        "poll_vote" => crate::canister::poll_vote_inspect(&permissions, &ic::caller()),
         _ => Ok(()),
     };
 
